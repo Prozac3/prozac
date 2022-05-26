@@ -1,18 +1,20 @@
 #include <prozac/fiber.h>
 #include <prozac/macro.h>
 #include <iostream>
+#include <atomic>
 namespace prozac
 {
-    static thread_local Fiber::ptr main_fiber;
-    static thread_local Fiber *this_fiber;
-    static thread_local uint64_t fiberIds;
+    static thread_local Fiber::ptr main_fiber = nullptr;
+    static thread_local Fiber *this_fiber = nullptr;
+    static thread_local std::atomic<uint64_t> fiberIds{0};
+    static thread_local std::atomic<uint64_t> fiber_count{0};
 
     Fiber::ptr Fiber::CreatFiber(std::function<void()> cb, uint64_t size)
     {
-        if (PROZAC_UNLIKELY(main_fiber == nullptr))
+        if (PROZAC_UNLIKELY(this_fiber == nullptr))
         {
             Fiber::ptr cur(new Fiber());
-            PROZAC_ASSERT(this_fiber = cur.get());
+            PROZAC_ASSERT(this_fiber == cur.get());
             main_fiber = cur;
         }
         return Fiber::ptr(new Fiber(cb, size));
@@ -29,8 +31,8 @@ namespace prozac
             return this_fiber->shared_from_this();
         }
 
-        Fiber::ptr cur(new Fiber());
-        PROZAC_ASSERT(this_fiber = cur.get());
+        Fiber::ptr cur(new Fiber);
+        PROZAC_ASSERT(this_fiber == cur.get());
         main_fiber = cur;
         return this_fiber->shared_from_this();
     }
@@ -42,29 +44,29 @@ namespace prozac
         {
             cur->m_cb();
             cur->m_cb = nullptr;
-            cur->stop();
         }
         catch (std::exception &ex)
         {
             cur->m_state = EXCEPT;
             std::cout << "Fiber Except: " << ex.what()
                       << " fiber_id=" << cur->getId()
-                      << std::endl
-                      << prozac::BacktraceToString();
+                      << std::endl;
+            //<< prozac::BacktraceToString();
         }
         catch (...)
         {
             cur->m_state = EXCEPT;
             std::cout << "Fiber Except"
                       << " fiber_id=" << cur->getId()
-                      << std::endl
-                      << prozac::BacktraceToString();
+                      << std::endl;
+            //<< prozac::BacktraceToString();
         }
         auto raw_ptr = cur.get();
         cur.reset();
-        if (PROZAC_UNLIKELY(cur->m_state == EXCEPT))
+        if (PROZAC_UNLIKELY(raw_ptr->m_state == EXCEPT))
         {
-            if (swapcontext(&Fiber::GetMainFiber()->m_ctx, &raw_ptr->m_ctx))
+            SetThis(GetMainFiber().get());
+            if (swapcontext(&raw_ptr->m_ctx, &Fiber::GetMainFiber()->m_ctx))
             {
                 PROZAC_ASSERT2(false, "fail to stop");
             }
@@ -77,11 +79,11 @@ namespace prozac
     }
     Fiber::ptr Fiber::GetMainFiber()
     {
-        return main_fiber;
+        return main_fiber->shared_from_this();
     }
 
     Fiber::Fiber(std::function<void()> cb, uint64_t size)
-        : m_cb(cb), m_stacksize(size)
+        : m_id(fiberIds), m_cb(cb), m_stacksize(size)
     {
         ++fiberIds;
         m_stack = malloc(m_stacksize);
@@ -90,11 +92,15 @@ namespace prozac
             return;
         }
 
+        if (getcontext(&m_ctx))
+        {
+            PROZAC_ASSERT2(false, "getcontext");
+        }
         m_ctx.uc_link = nullptr;
         m_ctx.uc_stack.ss_size = m_stacksize;
         m_ctx.uc_stack.ss_sp = m_stack;
         makecontext(&m_ctx, &Fiber::MainFunc, 0);
-        m_id = fiberIds;
+        ++fiber_count;
     }
 
     Fiber::Fiber()
@@ -106,6 +112,44 @@ namespace prozac
             PROZAC_ASSERT2(false, "getcontext");
         }
         ++fiberIds;
+        ++fiber_count;
+    }
+
+    Fiber::~Fiber()
+    {
+        --fiber_count;
+        std::cout << "this_fiber: " << this_fiber->m_id << std::endl;
+        PROZAC_ASSERT(this_fiber == GetMainFiber().get());
+        if (this != GetMainFiber().get())
+        {
+            PROZAC_ASSERT(m_state == DESTROY || m_state == EXCEPT);
+            if (m_stack)
+            {
+                free(m_stack);
+            }
+        }
+        else
+        {
+            if (m_stack)
+            {
+                free(m_stack);
+            }
+        }
+        std::cout << "m_id: "
+                  << m_id
+                  << " m_state: "
+                  << m_state
+                  << " Fiber::~Fiber()"
+                  << std::endl;
+    }
+
+    void Fiber::start()
+    {
+        PROZAC_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
+                       "Fiber::start() must be called in main fiber.");
+        PROZAC_ASSERT2(m_state == INIT,
+                       "The Fiber that is not init cannot be started.");
+        m_state = READY;
     }
 
     void Fiber::resume()

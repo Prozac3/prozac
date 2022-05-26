@@ -8,10 +8,9 @@
             "name": "(gdb) 启动",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/main",
-            "args": ["../data/JPEGImages/0008.jpg"],
+            "program": "${workspaceFolder}/bin/test_fiber",
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/out",
+            "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -29,7 +28,7 @@
             ],
 
             "miDebuggerPath": "/usr/bin/gdb",
-            //"preLaunchTask": "Build"
+            "preLaunchTask": "Build"
         }
     ]
 }
