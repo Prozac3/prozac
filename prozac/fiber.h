@@ -17,17 +17,20 @@ namespace prozac
             EXEC,
             HOLD,
             SLEEP,
-            DESTROY
+            DESTROY,
+            EXCEPT
         };
 
     public:
         void yield();
         void sleep(uint64_t t);
         void resume();
+        void stop();
+        uint64_t getId() { return m_id; }
 
     public:
         static Fiber::ptr CreatFiber(std::function<void()> cb, uint64_t size = 4096);
-        static void SetThis(Fiber* fiber);
+        static void SetThis(Fiber *fiber);
         static Fiber::ptr GetThis();
         static void MainFunc();
         static Fiber::ptr GetMainFiber();
