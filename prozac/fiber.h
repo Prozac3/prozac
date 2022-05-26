@@ -42,10 +42,10 @@ namespace prozac
     private:
         uint64_t m_id = 0;
         ucontext_t m_ctx;
+        std::function<void()> m_cb;
         uint64_t m_stacksize = 0;
         void *m_stack = nullptr;
         State m_state = INIT;
-        std::function<void()> m_cb;
         int64_t waketime = 0;
     };
 }
