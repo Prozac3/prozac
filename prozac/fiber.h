@@ -6,7 +6,7 @@
 #include <memory>
 namespace prozac
 {
-    class Fiber
+    class Fiber : std::enable_shared_from_this<Fiber>
     {
     public:
         typedef std::shared_ptr<Fiber> ptr;
@@ -21,20 +21,20 @@ namespace prozac
         };
 
     public:
-        void statr();
         void yield();
-        void sleep();
+        void sleep(uint64_t t);
         void resume();
 
     public:
         static Fiber::ptr CreatFiber(std::function<void()> cb, uint64_t size = 4096);
-        static void SetThis(Fiber::ptr fiber);
+        static void SetThis(Fiber* fiber);
         static Fiber::ptr GetThis();
         static void MainFunc();
         static Fiber::ptr GetMainFiber();
 
     private:
         Fiber(std::function<void()> cb, uint64_t size = 4096);
+        Fiber();
 
     private:
         uint64_t m_id = 0;
