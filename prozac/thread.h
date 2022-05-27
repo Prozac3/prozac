@@ -19,6 +19,7 @@ namespace prozac
         const std::string &getName() const { return m_name; };
         void join();
         static Thread *GetThis();
+        static void SetThis(Thread *thread);
         static const std::string &GetName();
         static void SetName(const std::string &name);
 

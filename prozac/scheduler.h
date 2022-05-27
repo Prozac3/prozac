@@ -2,6 +2,7 @@
 #define __PROZAC_SCHEDULER_H__
 #include <prozac/fiber.h>
 #include <prozac/thread.h>
+#include <memory>
 #include <queue>
 #include <list>
 #include <prozac/util.h>
@@ -14,6 +15,8 @@ namespace prozac
     private:
         struct Task
         {
+            public:
+            typedef std::shared_ptr<Task> ptr;
             Fiber::ptr fiber;
             uint64_t lasttime;
             int thread;
@@ -46,18 +49,18 @@ namespace prozac
         class WokerThread : public Thread
         {
         public:
-            WokerThread();
+            WokerThread(const std::string& name);
         private:
             static void *run(void *arg);
         private:
 
             int m_count;
-            std::list<Task> t_init;
-            std::priority_queue<Task> t_ready;
-            std::priority_queue<Task> t_sleep;
-            std::priority_queue<Task> t_hold;
-            std::list<Task> t_destroy;
-            std::queue<Task> t_pool;
+            std::string m_name;
+            std::queue<Task::ptr> t_init;
+            std::priority_queue<Task::ptr> t_ready;
+            std::priority_queue<Task::ptr> t_sleep;
+            std::list<Task::ptr> t_hold;
+            std::queue<Task::ptr> t_pool;
             Mutex m_mutex;
         };
     };

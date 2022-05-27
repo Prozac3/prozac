@@ -28,7 +28,9 @@ namespace prozac
         void resume();
         void stop();
         uint64_t getId() { return m_id; }
-
+        State getState() const { return m_state; }
+        void setState(State state) { m_state = state; }
+        uint64_t getWaketime() const { return waketime; }
         ~Fiber();
 
     public:
@@ -38,6 +40,7 @@ namespace prozac
         static void MainFunc();
         static Fiber::ptr GetMainFiber();
         static uint64_t GetFiberId();
+
     private:
         Fiber(std::function<void()> cb, uint64_t size = 4096);
         Fiber();
@@ -49,7 +52,7 @@ namespace prozac
         uint64_t m_stacksize = 0;
         void *m_stack = nullptr;
         State m_state = INIT;
-        int64_t waketime = 0;
+        uint64_t waketime = 0;
     };
 }
 

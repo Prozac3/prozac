@@ -333,13 +333,13 @@ namespace prozac
          */
         void rdlock() {}
 
-        bool tryrdlock() {}
+        bool tryrdlock() { return false; }
         /**
          * @brief 上写锁
          */
         void wrlock() {}
 
-        bool trywrlock() {}
+        bool trywrlock() { return false; }
         /**
          * @brief 解锁
          */

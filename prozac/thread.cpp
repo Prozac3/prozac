@@ -10,6 +10,11 @@ namespace prozac
         return this_thread;
     }
 
+    void Thread::SetThis(Thread *thread)
+    {
+        this_thread = thread;
+    }
+
     const std::string &Thread::GetName()
     {
         return this_thread_name;
