@@ -39,15 +39,17 @@ namespace prozac
     void Fiber::MainFunc()
     {
         Fiber::ptr cur = GetThis();
-        PROZAC_ASSERT(cur);
+        auto raw_ptr = cur.get();
+        cur.reset();
+        PROZAC_ASSERT(raw_ptr);
         try
         {
-            cur->m_cb();
-            cur->m_cb = nullptr;
+            raw_ptr->m_cb();
+            raw_ptr->m_cb = nullptr;
         }
         catch (std::exception &ex)
         {
-            cur->m_state = EXCEPT;
+            raw_ptr->m_state = EXCEPT;
             std::cout << "Fiber Except: " << ex.what()
                       << " fiber_id=" << cur->getId()
                       << std::endl;
@@ -55,18 +57,16 @@ namespace prozac
         }
         catch (...)
         {
-            cur->m_state = EXCEPT;
+            raw_ptr->m_state = EXCEPT;
             std::cout << "Fiber Except"
                       << " fiber_id=" << cur->getId()
                       << std::endl;
             //<< prozac::BacktraceToString();
         }
-        auto raw_ptr = cur.get();
-        cur.reset();
         if (PROZAC_UNLIKELY(raw_ptr->m_state == EXCEPT))
         {
             SetThis(GetMainFiber().get());
-            if (swapcontext(&raw_ptr->m_ctx, &Fiber::GetMainFiber()->m_ctx))
+            if (swapcontext(&raw_ptr->m_ctx, &main_fiber->m_ctx))
             {
                 PROZAC_ASSERT2(false, "fail to stop");
             }
@@ -119,8 +119,8 @@ namespace prozac
     {
         --fiber_count;
         std::cout << "this_fiber: " << this_fiber->m_id << std::endl;
-        PROZAC_ASSERT(this_fiber == GetMainFiber().get());
-        if (this != GetMainFiber().get())
+        PROZAC_ASSERT(this_fiber == main_fiber.get());
+        if (this != main_fiber.get())
         {
             PROZAC_ASSERT(m_state == DESTROY || m_state == EXCEPT);
             if (m_stack)
@@ -154,13 +154,16 @@ namespace prozac
 
     void Fiber::resume()
     {
+
         PROZAC_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
                        "Fiber::resume() must be called in main fiber.");
+
         SetThis(this);
+
         PROZAC_ASSERT2(m_state == READY,
                        "The Fiber that is not ready cannot be resumed");
         m_state = EXEC;
-        if (swapcontext(&Fiber::GetMainFiber()->m_ctx, &m_ctx))
+        if (swapcontext(&main_fiber->m_ctx, &m_ctx))
         {
             PROZAC_ASSERT2(false, "fail to resume");
         }
@@ -174,7 +177,7 @@ namespace prozac
         PROZAC_ASSERT2(m_state == EXEC,
                        "The Fiber that is not executing cannot be yielded");
         m_state = HOLD;
-        if (swapcontext(&m_ctx, &Fiber::GetMainFiber()->m_ctx))
+        if (swapcontext(&m_ctx, &main_fiber->m_ctx))
         {
             PROZAC_ASSERT2(false, "fail to yield");
         }
@@ -186,7 +189,7 @@ namespace prozac
                        "Fiber::stop() must be called in child fiber.");
         SetThis(GetMainFiber().get());
         m_state = DESTROY;
-        if (swapcontext(&m_ctx, &Fiber::GetMainFiber()->m_ctx))
+        if (swapcontext(&m_ctx, &main_fiber->m_ctx))
         {
             PROZAC_ASSERT2(false, "fail to stop");
         }
@@ -201,7 +204,7 @@ namespace prozac
                        "The Fiber that is not executing cannot sleep");
         m_state = SLEEP;
         waketime = GetCurrentUS() + t;
-        if (swapcontext(&m_ctx, &Fiber::GetMainFiber()->m_ctx))
+        if (swapcontext(&m_ctx, &main_fiber->m_ctx))
         {
             PROZAC_ASSERT2(false, "fail to yield");
         }

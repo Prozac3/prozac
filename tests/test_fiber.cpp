@@ -3,6 +3,10 @@
 
 void test_fiber()
 {
+    auto cur = prozac::Fiber::GetThis();
+    auto ptr = cur.get();
+    cur.reset();
+    ptr->stop();
     std::cout << "Hello World!" << std::endl;
 }
 
@@ -10,6 +14,7 @@ void test_except()
 {
     throw(8);
 }
+
 int main(int argc, char **argv)
 {
     {
@@ -18,14 +23,21 @@ int main(int argc, char **argv)
         fib1->resume();
     }
 
-    while (true)
     {
-        prozac::Fiber::ptr fib2 = prozac::Fiber::CreatFiber(test_except);
+        prozac::Fiber::ptr fib2 = prozac::Fiber::CreatFiber(test_fiber);
         fib2->start();
+        auto p = prozac::Fiber::GetMainFiber();
         fib2->resume();
-        std::cout << "line35: " << prozac::Fiber::GetThis()->getId() << std::endl;
+       
     }
 
+    // while (true)
+    // {
+    //     prozac::Fiber::ptr fib2 = prozac::Fiber::CreatFiber(test_except);
+    //     fib2->start();
+    //     fib2->resume();
+    //     std::cout << "line35: " << prozac::Fiber::GetThis()->getId() << std::endl;
+    // }
     std::cout << "return" << std::endl;
     return 0;
 }
