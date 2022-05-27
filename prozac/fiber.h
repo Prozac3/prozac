@@ -37,7 +37,7 @@ namespace prozac
         static Fiber::ptr GetThis();
         static void MainFunc();
         static Fiber::ptr GetMainFiber();
-
+        static uint64_t GetFiberId();
     private:
         Fiber(std::function<void()> cb, uint64_t size = 4096);
         Fiber();

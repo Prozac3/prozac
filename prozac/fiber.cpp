@@ -82,6 +82,15 @@ namespace prozac
         return main_fiber->shared_from_this();
     }
 
+    uint64_t Fiber::GetFiberId()
+    {
+        if (this_fiber)
+        {
+            return this_fiber->getId();
+        }
+        return 0;
+    }
+
     Fiber::Fiber(std::function<void()> cb, uint64_t size)
         : m_id(fiberIds), m_cb(cb), m_stacksize(size)
     {

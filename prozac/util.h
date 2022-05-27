@@ -4,8 +4,10 @@
 #include <string>
 namespace prozac
 {
-    static std::string demangle(const char *str);
+    pid_t GetThreadId();
+    uint64_t GetFiberId();
 
+    static std::string demangle(const char *str);
     void Backtrace(std::vector<std::string> &bt, int size = 64, int skip = 1);
 
     /**

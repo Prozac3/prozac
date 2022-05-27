@@ -4,8 +4,25 @@
 #include <execinfo.h>
 #include <cxxabi.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <prozac/fiber.h>
 namespace prozac
 {
+
+    pid_t GetThreadId()
+    {
+        return syscall(SYS_gettid);
+    }
+    uint64_t GetFiberId()
+    {
+        return Fiber::GetFiberId();
+    }
+
     static std::string demangle(const char *str)
     {
         size_t size = 0;
