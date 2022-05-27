@@ -43,14 +43,14 @@ namespace prozac
 
     Thread::Thread()
     {
-        m_name = "UNKNOW";
-        int ret = pthread_create(&m_thread, nullptr, &Thread::run, this);
-        if (ret)
-        {
-            throw std::logic_error("pthread_create error");
-        }
+        // m_name = "UNKNOW";
+        // int ret = pthread_create(&m_thread, nullptr, &Thread::run, this);
+        // if (ret)
+        // {
+        //     throw std::logic_error("pthread_create error");
+        // }
 
-        m_semaphore.wait();
+        // m_semaphore.wait();
     }
 
     Thread::~Thread()
