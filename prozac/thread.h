@@ -13,6 +13,7 @@ namespace prozac
     public:
         typedef std::shared_ptr<Thread> ptr;
         Thread(std::function<void()> cb, const std::string &name);
+        Thread();
         ~Thread();
         pid_t getId() const { return m_id; };
         const std::string &getName() const { return m_name; };
@@ -27,7 +28,7 @@ namespace prozac
         Thread operator=(const Thread &) = delete;
         static void *run(void *arg);
 
-    private:
+    protected:
         pid_t m_id;
         pthread_t m_thread;
         std::function<void()> m_cb;
