@@ -232,7 +232,6 @@ namespace prozac
                 else
                 {
                     t->fiber->destroy();
-                    
                 }
             }
         }

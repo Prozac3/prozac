@@ -4,9 +4,19 @@
 #include <string>
 namespace prozac
 {
+    /**
+     * @brief 获取线程ID
+     *
+     * @return pid_t    线程ID
+     */
     pid_t GetThreadId();
-    uint64_t GetFiberId();
 
+    /**
+     * @brief 获取协程ID
+     *
+     * @return uint64_t 协程ID
+     */
+    uint64_t GetFiberId();
     static std::string demangle(const char *str);
     void Backtrace(std::vector<std::string> &bt, int size = 64, int skip = 1);
 
