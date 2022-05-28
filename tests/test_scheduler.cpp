@@ -13,7 +13,7 @@ void test_scheduler()
 void test_sleep()
 {
     mut.lock();
-    int t = rand() % 10000;
+    int t = rand() % 1000;
     std::cout << "pid: " << prozac::GetThreadId()
               << " fiber_id: " << prozac::GetFiberId()
               << "   sleep for " << t << "ms" << std::endl;
@@ -40,7 +40,6 @@ void test_hold()
         prozac::Fiber::GetThis()->hold();
     }
 
-
     mut.lock();
     std::cout << "pid: " << prozac::GetThreadId()
               << " fiber_id: " << prozac::GetFiberId()
@@ -49,22 +48,41 @@ void test_hold()
 
     prozac::Fiber::GetThis()->yield();
 }
+
+void test()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        int k = rand() % 3;
+        switch (k)
+        {
+        case 0:
+            test_scheduler();
+        case 1:
+            test_sleep();
+        case 2:
+            test_hold();
+        default:
+            test_scheduler();
+        }
+    }
+}
 int main(int argc, char **argv)
 {
     srand(time(NULL));
-    prozac::Scheduler sch(8, "sch1");
-    int k = 1000000;
-    while (true)
+    auto start = prozac::GetCurrentMS();
+    prozac::Scheduler sch(12, "sch1");
+    int k = 200000;
+    while (k > 0)
     {
-        prozac::Fiber::ptr f = prozac::Fiber::CreatFiber(test_hold);
+        prozac::Fiber::ptr f = prozac::Fiber::CreatFiber(test);
         prozac::Scheduler::Task::ptr task(new prozac::Scheduler::Task(std::move(f)));
         sch.submit(std::move(task));
         k--;
     }
-    while (true)
-    {
-        /* code */
-    }
 
+    sch.stop();
+    auto end = prozac::GetCurrentMS();
+    std::cout << "running time: " << end - start << " ms" << std::endl;
     return 0;
 }

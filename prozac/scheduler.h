@@ -12,6 +12,7 @@
 #include <atomic>
 namespace prozac
 {
+    class Scheduler;
     class Scheduler
     {
     public:
@@ -80,7 +81,7 @@ namespace prozac
         public:
             friend class AllocThread;
             typedef std::shared_ptr<WokerThread> ptr;
-            WokerThread(const std::string &name);
+            WokerThread(const std::string &name,std::atomic_bool& stop);
 
         private:
             static void *run(void *arg);
@@ -93,15 +94,20 @@ namespace prozac
             std::priority_queue<Task::ptr, std::vector<Task::ptr>, sleep_cmp> t_sleep;
             std::list<Task::ptr> t_hold;
             Mutex m_mutex;
+            std::atomic_bool& m_stop;
         };
 
         class AllocThread : public Thread
         {
         public:
             friend class WokerThread;
+            friend class Scheduler;
+            typedef std::shared_ptr<AllocThread> ptr;
             AllocThread(Mutex &mutex,
                         std::vector<WokerThread::ptr> &works,
                         std::queue<Task::ptr> &tasks,
+                        std::atomic<uint64_t>& count,
+                        std::atomic_bool& stop,
                         const std::string &name);
 
         private:
@@ -111,12 +117,14 @@ namespace prozac
             Mutex &m_mutex;
             std::vector<WokerThread::ptr> &m_workers;
             std::queue<Task::ptr> &m_tasks;
+            std::atomic<uint64_t>& m_count;
+            std::atomic_bool& m_stop;
         };
 
     public:
         Scheduler(uint16_t count, const std::string &name);
         ~Scheduler();
-
+        void stop();
         void submit(Scheduler::Task::ptr t);
 
     private:
@@ -126,6 +134,8 @@ namespace prozac
         uint16_t m_thread_count;
         std::string m_name;
         AllocThread::ptr m_alloc;
+        std::atomic_bool m_stop{false};
+        std::atomic<uint64_t> m_count{0};
     };
 }
 

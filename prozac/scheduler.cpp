@@ -11,7 +11,7 @@ namespace prozac
         pthread_setname_np(pthread_self(), thr->m_name.substr(0, 15).c_str());
         thr->m_semaphore.notify();
         Fiber::GetThis();
-        while (true)
+        while ((!thr->m_stop) || (thr->m_count > 0))
         {
 
             //尝试取出任务
@@ -83,6 +83,10 @@ namespace prozac
                     {
                         thr->t_sleep.push(std::move(task));
                     }
+                    else if (PROZAC_UNLIKELY(task->fiber->getState() == Fiber::READY))
+                    {
+                        thr->t_ready.push(std::move(task));
+                    }
                     else
                     {
                         thr->m_count--;
@@ -103,7 +107,7 @@ namespace prozac
         pthread_setname_np(pthread_self(), thr->m_name.substr(0, 15).c_str());
         thr->m_semaphore.notify();
         size_t k = 0;
-        while (true)
+        while (PROZAC_LIKELY((!thr->m_stop) || (thr->m_count > 0)))
         {
             if (PROZAC_UNLIKELY(thr->m_workers.size() == 0))
             {
@@ -127,15 +131,17 @@ namespace prozac
                         thr->m_tasks.pop();
                         woker->t_init.push(std::move(task));
                         woker->m_count++;
+                        thr->m_count--;
                         l--;
                     }
                 }
             }
         }
+        return 0;
     }
 
-    Scheduler::WokerThread::WokerThread(const std::string &name)
-        : m_name(name)
+    Scheduler::WokerThread::WokerThread(const std::string &name, std::atomic_bool &stop)
+        : m_name(name), m_stop(stop)
     {
         if (name.empty())
         {
@@ -158,10 +164,14 @@ namespace prozac
     Scheduler::AllocThread::AllocThread(Mutex &mutex,
                                         std::vector<WokerThread::ptr> &works,
                                         std::queue<Task::ptr> &tasks,
+                                        std::atomic<uint64_t>& count,
+                                        std::atomic_bool &stop,
                                         const std::string &name)
         : m_mutex(mutex),
           m_workers(works),
-          m_tasks(tasks)
+          m_tasks(tasks),
+          m_count(count),
+          m_stop(stop)  
 
     {
         m_name = name;
@@ -184,28 +194,46 @@ namespace prozac
     {
         for (int i = 0; i < count; i++)
         {
-            WokerThread::ptr thr(new WokerThread(m_name + "_woker" + std::to_string(i)));
+            WokerThread::ptr thr(new WokerThread(m_name + "_woker" + std::to_string(i), m_stop));
             m_workers.push_back(thr);
         }
         m_tasks = std::queue<Scheduler::Task::ptr>();
-        m_alloc = AllocThread::ptr(new AllocThread(m_mutex, m_workers, m_tasks, m_name + "_alloc"));
+        m_alloc = AllocThread::ptr(new AllocThread(m_mutex, m_workers, m_tasks, m_count,m_stop, m_name + "_alloc"));
     }
 
     Scheduler::~Scheduler()
     {
+        if(!m_stop){
+            stop();
+        }
+    }
+
+    void Scheduler::stop()
+    {
+        m_stop = true;
+        for(auto woker:m_workers)
+        {
+            woker->join();
+        }
+        m_alloc->join();
     }
 
     void Scheduler::submit(Scheduler::Task::ptr t)
     {
         {
-            Mutex::Lock lock(m_mutex);
-            if (m_tasks.size() < 10000)
+            if (PROZAC_LIKELY(!m_stop))
             {
-                m_tasks.push(std::move(t));
-            }
-            else
-            {
-                t->fiber->destroy();
+                Mutex::Lock lock(m_mutex);
+                if (m_tasks.size() < 10000)
+                {
+                    m_tasks.push(std::move(t));
+                    m_count++;
+                }
+                else
+                {
+                    t->fiber->destroy();
+                    
+                }
             }
         }
     }
