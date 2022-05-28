@@ -47,6 +47,32 @@ namespace prozac
                 }
             }
         };
+
+        struct task_cmp
+        {
+            bool operator()(Task::ptr t1, Task::ptr t2)
+            {
+                if (t1->priority == t2->priority)
+                {
+                    return t1->lasttime > t2->lasttime;
+                }
+                else
+                {
+                    uint16_t k = t1->priority + t2->priority + 2;
+                    k = rand() % k;
+                    return t1->priority < k;
+                }
+            }
+        };
+
+        struct sleep_cmp
+        {
+            bool operator()(Task::ptr t1, Task::ptr t2)
+            {
+                return t1->fiber->getWaketime() > t2->fiber->getWaketime();
+            }
+        };
+
         class WokerThread;
         class AllocThread;
         class WokerThread : public Thread
@@ -63,8 +89,8 @@ namespace prozac
             std::atomic<int> m_count{0};
             std::string m_name;
             std::queue<Task::ptr> t_init;
-            std::priority_queue<Task::ptr> t_ready;
-            std::priority_queue<Task::ptr> t_sleep;
+            std::priority_queue<Task::ptr, std::vector<Task::ptr>, task_cmp> t_ready;
+            std::priority_queue<Task::ptr, std::vector<Task::ptr>, sleep_cmp> t_sleep;
             std::list<Task::ptr> t_hold;
             Mutex m_mutex;
         };

@@ -23,13 +23,16 @@ namespace prozac
 
     public:
         void start();
-        void yield();
+        void hold();
+        void notify();
         void sleep(uint64_t t);
+        void awake();
+        void yield();
         void resume();
         void stop();
+        void destroy();
         uint64_t getId() { return m_id; }
         State getState() const { return m_state; }
-        void setState(State state) { m_state = state; }
         uint64_t getWaketime() const { return waketime; }
         ~Fiber();
 

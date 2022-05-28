@@ -29,6 +29,45 @@ namespace prozac
                 }
             }
 
+            //休眠队列
+            {
+                auto t = prozac::GetCurrentMS();
+                while (!thr->t_sleep.empty())
+                {
+                    auto task = thr->t_sleep.top();
+                    if (task->fiber->getWaketime() < t)
+                    {
+                        task->fiber->awake();
+                        thr->t_ready.push(std::move(task));
+                        thr->t_sleep.pop();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            //遍历挂起队列
+            {
+                size_t n = thr->t_hold.size();
+                auto itr = thr->t_hold.begin();
+                for (size_t i = 0; i < n; i++)
+                {
+                    auto task = *itr;
+                    task->fiber->notify();
+                    if (task->fiber->getState() == Fiber::READY)
+                    {
+                        thr->t_ready.push(std::move(task));
+                        thr->t_hold.erase(itr++);
+                    }
+                    else
+                    {
+                        itr++;
+                    }
+                }
+            }
+
             //拿出任务执行
             {
                 if (!thr->t_ready.empty())
@@ -48,44 +87,6 @@ namespace prozac
                     {
                         thr->m_count--;
                         task.reset();
-                    }
-                }
-            }
-
-            //休眠队列
-            {
-                auto t = prozac::GetCurrentMS();
-                while (!thr->t_sleep.empty())
-                {
-                    auto task = thr->t_sleep.top();
-                    if (task->fiber->getWaketime() > t)
-                    {
-                        task->fiber->setState(Fiber::READY);
-                        thr->t_ready.push(std::move(task));
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            }
-
-            //遍历挂起队列
-            {
-                size_t n = thr->t_hold.size();
-                auto itr = thr->t_hold.begin();
-                for (size_t i = 0; i < n; i++)
-                {
-                    auto task = *itr;
-                    task->fiber->resume();
-                    if (task->fiber->getState() == Fiber::READY)
-                    {
-                        thr->t_hold.erase(itr);
-                        thr->t_ready.push(std::move(task));
-                    }
-                    else
-                    {
-                        itr++;
                     }
                 }
             }
@@ -141,11 +142,10 @@ namespace prozac
             m_name = "UNKNOW";
         }
         t_hold.resize(0);
-        t_init = std::queue<Scheduler::Task::ptr>();
-        t_ready = std::priority_queue<Scheduler::Task::ptr>();
+        t_init = std::queue<Task::ptr>();
+        t_ready = std::priority_queue<Task::ptr, std::vector<Task::ptr>, task_cmp>();
         t_hold.resize(0);
-        t_sleep = std::priority_queue<Scheduler::Task::ptr>();
-        std::cout << "WokerThread::WokerThread" << std::endl;
+        t_sleep = std::priority_queue<Scheduler::Task::ptr, std::vector<Task::ptr>, sleep_cmp>();
         int ret = pthread_create(&m_thread, nullptr, &WokerThread::run, this);
         if (ret)
         {
@@ -202,11 +202,11 @@ namespace prozac
             if (m_tasks.size() < 10000)
             {
                 m_tasks.push(std::move(t));
-            }else 
-            {
-                t->fiber->setState(Fiber::DESTROY);
             }
-            
+            else
+            {
+                t->fiber->destroy();
+            }
         }
     }
 

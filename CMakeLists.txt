@@ -16,6 +16,8 @@ pthread)
 
 add_library(prozac SHARED ${LIB_SRC})
 add_executable(tests tests/test_main.cpp)
+add_executable(test_queue tests/test_queue.cpp)
+
 add_executable(test_fiber tests/test_fiber.cpp)
 add_dependencies(test_fiber prozac)
 target_link_libraries(test_fiber ${LIBS})

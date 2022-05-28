@@ -43,6 +43,7 @@
         "typeinfo": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "queue": "cpp"
     }
 }
