@@ -9,6 +9,7 @@
 #include <prozac/util.h>
 #include <prozac/macro.h>
 #include <random>
+#include <atomic>
 namespace prozac
 {
     class Scheduler
@@ -59,13 +60,12 @@ namespace prozac
             static void *run(void *arg);
 
         private:
-            int m_count;
+            std::atomic<int> m_count{0};
             std::string m_name;
             std::queue<Task::ptr> t_init;
             std::priority_queue<Task::ptr> t_ready;
             std::priority_queue<Task::ptr> t_sleep;
             std::list<Task::ptr> t_hold;
-            std::queue<Task::ptr> t_pool;
             Mutex m_mutex;
         };
 
@@ -75,7 +75,7 @@ namespace prozac
             friend class WokerThread;
             AllocThread(Mutex &mutex,
                         std::vector<WokerThread::ptr> &works,
-                        std::queue<Task::ptr>& tasks,
+                        std::queue<Task::ptr> &tasks,
                         const std::string &name);
 
         private:
@@ -86,8 +86,9 @@ namespace prozac
             std::vector<WokerThread::ptr> &m_workers;
             std::queue<Task::ptr> &m_tasks;
         };
+
     public:
-        Scheduler(uint16_t count,const std::string&name);
+        Scheduler(uint16_t count, const std::string &name);
         ~Scheduler();
 
         void submit(Scheduler::Task::ptr t);

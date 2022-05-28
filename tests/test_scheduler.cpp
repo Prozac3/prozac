@@ -8,16 +8,12 @@ void test_scheduler(){
 int main(int argc,char** argv)
 {
     prozac::Scheduler sch(8,"sch1");
-    int k = 100000;
-    while(k>0){
+    int k = 5;
+    while(true){
         prozac::Fiber::ptr f = prozac::Fiber::CreatFiber(test_scheduler);
-        prozac::Scheduler::Task::ptr task(new prozac::Scheduler::Task(f));
-        sch.submit(task);
+        prozac::Scheduler::Task::ptr task(new prozac::Scheduler::Task(std::move(f)));
+        sch.submit(std::move(task));
         k--;
-    }
-    while(true)
-    {
-
     }
     return 0;
 }

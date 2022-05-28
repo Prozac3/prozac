@@ -20,10 +20,10 @@ namespace prozac
                 {
                     while (!thr->t_init.empty())
                     {
-                        auto p = thr->t_init.front();
+                        auto task = thr->t_init.front();
                         thr->t_init.pop();
-                        p->fiber->setState(Fiber::READY);
-                        thr->t_ready.push(p);
+                        task->fiber->start();
+                        thr->t_ready.push(std::move(task));
                     }
                     thr->m_mutex.unlock();
                 }
@@ -38,14 +38,15 @@ namespace prozac
                     task->fiber->resume();
                     if (task->fiber->getState() == Fiber::HOLD)
                     {
-                        thr->t_hold.push_back(task);
+                        thr->t_hold.push_back(std::move(task));
                     }
                     else if (task->fiber->getState() == Fiber::SLEEP)
                     {
-                        thr->t_sleep.push(task);
+                        thr->t_sleep.push(std::move(task));
                     }
                     else
                     {
+                        thr->m_count--;
                         task.reset();
                     }
                 }
@@ -60,7 +61,7 @@ namespace prozac
                     if (task->fiber->getWaketime() > t)
                     {
                         task->fiber->setState(Fiber::READY);
-                        thr->t_ready.push(task);
+                        thr->t_ready.push(std::move(task));
                     }
                     else
                     {
@@ -80,7 +81,7 @@ namespace prozac
                     if (task->fiber->getState() == Fiber::READY)
                     {
                         thr->t_hold.erase(itr);
-                        thr->t_ready.push(task);
+                        thr->t_ready.push(std::move(task));
                     }
                     else
                     {
@@ -116,13 +117,17 @@ namespace prozac
             k++;
             Mutex::Lock lock2(woker->m_mutex);
             {
-                int l = 10;
-                while ((!thr->m_tasks.empty()) && l > 0)
+                if (woker->m_count < 100000)
                 {
-                    auto task = thr->m_tasks.front();
-                    thr->m_tasks.pop();
-                    woker->t_init.push(task);
-                    l--;
+                    int l = 10;
+                    while ((!thr->m_tasks.empty()) && l > 0)
+                    {
+                        auto task = thr->m_tasks.front();
+                        thr->m_tasks.pop();
+                        woker->t_init.push(std::move(task));
+                        woker->m_count++;
+                        l--;
+                    }
                 }
             }
         }
@@ -194,10 +199,14 @@ namespace prozac
     {
         {
             Mutex::Lock lock(m_mutex);
-            if (m_tasks.size() < 1000)
+            if (m_tasks.size() < 10000)
             {
-                m_tasks.push(t);
+                m_tasks.push(std::move(t));
+            }else 
+            {
+                t->fiber->setState(Fiber::DESTROY);
             }
+            
         }
     }
 
