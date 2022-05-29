@@ -8,7 +8,8 @@ set(LIB_SRC
     ./prozac/util.cpp
     ./prozac/mutex.cpp
     ./prozac/thread.cpp
-    ./prozac/scheduler.cpp)
+    ./prozac/scheduler.cpp
+    ./prozac/log.cpp)
 
 set(LIBS
 prozac 
@@ -17,6 +18,7 @@ pthread)
 add_library(prozac SHARED ${LIB_SRC})
 add_executable(tests tests/test_main.cpp)
 add_executable(test_queue tests/test_queue.cpp)
+add_executable(test_factory tests/test_factory.cpp)
 
 add_executable(test_fiber tests/test_fiber.cpp)
 add_dependencies(test_fiber prozac)
