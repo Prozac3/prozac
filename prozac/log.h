@@ -47,7 +47,6 @@ namespace prozac
          */
         static LogLevel::Level FromString(const std::string &str);
     };
-    class Logger;
     class LogEvent
     {
     public:
@@ -277,36 +276,6 @@ namespace prozac
          * @param[in] event 日志事件
          */
         void log(LogEvent::ptr event);
-
-        /**
-         * @brief 写debug级别日志
-         * @param[in] event 日志事件
-         */
-        void debug(LogEvent::ptr event);
-
-        /**
-         * @brief 写info级别日志
-         * @param[in] event 日志事件
-         */
-        void info(LogEvent::ptr event);
-
-        /**
-         * @brief 写warn级别日志
-         * @param[in] event 日志事件
-         */
-        void warn(LogEvent::ptr event);
-
-        /**
-         * @brief 写error级别日志
-         * @param[in] event 日志事件
-         */
-        void error(LogEvent::ptr event);
-
-        /**
-         * @brief 写fatal级别日志
-         * @param[in] event 日志事件
-         */
-        void fatal(LogEvent::ptr event);
 
         /**
          * @brief 添加日志目标

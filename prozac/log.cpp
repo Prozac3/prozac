@@ -4,6 +4,7 @@
 #include <map>
 #include <iostream>
 #include <functional>
+#include <yaml-cpp/yaml.h>
 namespace prozac
 {
     LogEvent::LogEvent(std::shared_ptr<Logger> logger,
@@ -377,4 +378,200 @@ namespace prozac
         return m_formatter;
     }
 
+    void StdoutLogAppender::log(LogEvent::ptr event)
+    {
+        if (event->getLevel() >= m_level)
+        {
+            MutexType::Lock lock(m_mutex);
+            m_formatter->format(std::cout, event);
+        }
+    }
+
+    std::string StdoutLogAppender::toYamlString()
+    {
+        MutexType::Lock lock(m_mutex);
+        YAML::Node node;
+        node["type"] = "StdoutLogAppender";
+        if (m_level != LogLevel::UNKNOW)
+        {
+            node["level"] = LogLevel::ToString(m_level);
+        }
+        if (m_hasFormatter && m_formatter)
+        {
+            node["formatter"] = m_formatter->getPattern();
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
+    FileLogAppender::FileLogAppender(const std::string &filename)
+        : m_filename(filename)
+    {
+        reopen();
+    }
+
+    void FileLogAppender::log(LogEvent::ptr event)
+    {
+        if (event->getLevel() >= m_level)
+        {
+            uint64_t now = event->getTime();
+            if (now >= (m_lastTime + 3))
+            {
+                reopen();
+                m_lastTime = now;
+            }
+            MutexType::Lock lock(m_mutex);
+            // if(!(m_filestream << m_formatter->format(logger, level, event))) {
+            if (!m_formatter->format(m_filestream, event))
+            {
+                std::cout << "error" << std::endl;
+            }
+        }
+    }
+
+    std::string FileLogAppender::toYamlString()
+    {
+        MutexType::Lock lock(m_mutex);
+        YAML::Node node;
+        node["type"] = "FileLogAppender";
+        node["file"] = m_filename;
+        if (m_level != LogLevel::UNKNOW)
+        {
+            node["level"] = LogLevel::ToString(m_level);
+        }
+        if (m_hasFormatter && m_formatter)
+        {
+            node["formatter"] = m_formatter->getPattern();
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
+    bool FileLogAppender::reopen()
+    {
+        MutexType::Lock lock(m_mutex);
+        if (m_filestream)
+        {
+            m_filestream.close();
+        }
+        return FSUtil::OpenForWrite(m_filestream, m_filename, std::ios::app);
+    }
+
+    Logger::Logger(const std::string &name)
+        : m_name(name), m_level(LogLevel::DEBUG)
+    {
+        m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+    }
+
+    void Logger::log(LogEvent::ptr event)
+    {
+        if (event->getLevel() >= m_level)
+        {
+            auto self = shared_from_this();
+            MutexType::Lock lock(m_mutex);
+            if (!m_appenders.empty())
+            {
+                for (auto &i : m_appenders)
+                {
+                    i->log(event);
+                }
+            }
+            else if (m_root)
+            {
+                m_root->log(event);
+            }
+        }
+    }
+
+    void Logger::addAppender(LogAppender::ptr appender)
+    {
+        MutexType::Lock lock(m_mutex);
+        if (!appender->getFormatter())
+        {
+            MutexType::Lock ll(appender->m_mutex);
+            appender->m_formatter = m_formatter;
+        }
+        m_appenders.push_back(appender);
+    }
+
+    void Logger::delAppender(LogAppender::ptr appender)
+    {
+        MutexType::Lock lock(m_mutex);
+        for (auto it = m_appenders.begin();
+             it != m_appenders.end(); ++it)
+        {
+            if (*it == appender)
+            {
+                m_appenders.erase(it);
+                break;
+            }
+        }
+    }
+
+    void Logger::clearAppenders()
+    {
+        MutexType::Lock lock(m_mutex);
+        m_appenders.clear();
+    }
+
+    void Logger::setFormatter(LogFormatter::ptr val)
+    {
+        MutexType::Lock lock(m_mutex);
+        m_formatter = val;
+
+        for (auto &i : m_appenders)
+        {
+            MutexType::Lock ll(i->m_mutex);
+            if (!i->m_hasFormatter)
+            {
+                i->m_formatter = m_formatter;
+            }
+        }
+    }
+
+    void Logger::setFormatter(const std::string &val)
+    {
+        std::cout << "---" << val << std::endl;
+        prozac::LogFormatter::ptr new_val(new prozac::LogFormatter(val));
+        if (new_val->isError())
+        {
+            std::cout << "Logger setFormatter name=" << m_name
+                      << " value=" << val << " invalid formatter"
+                      << std::endl;
+            return;
+        }
+        // m_formatter = new_val;
+        setFormatter(new_val);
+    }
+
+    std::string Logger::toYamlString()
+    {
+        MutexType::Lock lock(m_mutex);
+        YAML::Node node;
+        node["name"] = m_name;
+        if (m_level != LogLevel::UNKNOW)
+        {
+            node["level"] = LogLevel::ToString(m_level);
+        }
+        if (m_formatter)
+        {
+            node["formatter"] = m_formatter->getPattern();
+        }
+
+        for (auto &i : m_appenders)
+        {
+            node["appenders"].push_back(YAML::Load(i->toYamlString()));
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+
+    LogFormatter::ptr Logger::getFormatter()
+    {
+        MutexType::Lock lock(m_mutex);
+        return m_formatter;
+    }
 }
