@@ -3,17 +3,21 @@ project(prozac VERSION 0.1.0)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -fPIC -ggdb -std=c++11 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 include_directories(./)
 find_library(PTHREAD pthread)
+find_package(yaml-cpp REQUIRED)
+include_directories(${YAML_CPP_INCLUDE_DIR})
 set(LIB_SRC 
+    ./prozac/log.cpp
     ./prozac/fiber.cpp
     ./prozac/util.cpp
     ./prozac/mutex.cpp
     ./prozac/thread.cpp
     ./prozac/scheduler.cpp
-    ./prozac/log.cpp)
+    )
 
 set(LIBS
 prozac 
-pthread)
+pthread
+yaml-cpp)
 
 add_library(prozac SHARED ${LIB_SRC})
 add_executable(tests tests/test_main.cpp)

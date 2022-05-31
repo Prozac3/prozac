@@ -10,6 +10,7 @@
 #include <fstream>
 namespace prozac
 {
+    class Logger;
     /**
      * @brief 日志级别
      */
@@ -47,6 +48,8 @@ namespace prozac
          */
         static LogLevel::Level FromString(const std::string &str);
     };
+    
+
     class LogEvent
     {
     public:
@@ -89,7 +92,7 @@ namespace prozac
 
         LogLevel::Level getLevel() const { return m_level; }
 
-        Logger::ptr getLogger() const { return m_logger; }
+        std::shared_ptr<Logger> getLogger() const { return m_logger; }
 
         std::stringstream &getSS() { return m_ss; }
 
@@ -258,7 +261,7 @@ namespace prozac
      */
     class Logger : public std::enable_shared_from_this<Logger>
     {
-        friend class LoggerManager;
+        //friend class LoggerManager;
 
     public:
         typedef std::shared_ptr<Logger> ptr;
@@ -342,43 +345,6 @@ namespace prozac
         LogFormatter::ptr m_formatter;
         /// 主日志器
         Logger::ptr m_root;
-    };
-
-    /**
-     * @brief 输出到控制台的Appender
-     */
-    class StdoutLogAppender : public LogAppender
-    {
-    public:
-        typedef std::shared_ptr<StdoutLogAppender> ptr;
-        void log(LogEvent::ptr event) override;
-        std::string toYamlString() override;
-    };
-
-    /**
-     * @brief 输出到文件的Appender
-     */
-    class FileLogAppender : public LogAppender
-    {
-    public:
-        typedef std::shared_ptr<FileLogAppender> ptr;
-        FileLogAppender(const std::string &filename);
-        void log(LogEvent::ptr event) override;
-        std::string toYamlString() override;
-
-        /**
-         * @brief 重新打开日志文件
-         * @return 成功返回true
-         */
-        bool reopen();
-
-    private:
-        /// 文件路径
-        std::string m_filename;
-        /// 文件流
-        std::ofstream m_filestream;
-        /// 上次重新打开时间
-        uint64_t m_lastTime = 0;
     };
 
     /**
