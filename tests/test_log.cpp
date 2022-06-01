@@ -4,6 +4,8 @@
 #include <prozac/thread.h>
 int main(int argc, char **argv)
 {
+    prozac::Fiber::GetThis();
+    prozac::Thread::SetName("main");
     prozac::Logger::ptr log(new prozac::Logger());
     prozac::StdoutLogAppender::ptr stdApp(new prozac::StdoutLogAppender);
     prozac::LogEvent::ptr event(new prozac::LogEvent(
