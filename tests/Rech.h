@@ -11,7 +11,7 @@ class Rectangle : public BaseShape
 {
 public:
     std::string m_userData;
-    Rectangle(std::string userDate)
+    Rectangle(const std::string& userDate)
     {
         m_userData = userDate;
     }

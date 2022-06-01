@@ -11,7 +11,7 @@ int main(int argc, char **argv)
         __FILE__, __LINE__, 0,
         prozac::GetThreadId(),
         prozac::GetFiberId(),
-        prozac::GetCurrentMS(),
+        time(0),
         prozac::Thread::GetName()));
     log->addAppender(stdApp);
     log->log(event);

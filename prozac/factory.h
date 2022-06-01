@@ -26,7 +26,7 @@ class Factory
 public:
 	/// 根据类名创建 BaseClass 子类的对象
 	template<class BaseClass, typename ...ArgType>
-	static BaseClass* CreateObj(const char* className, ArgType... arg)
+	static BaseClass* CreateObj(std::string className, ArgType... arg)
 	{
 		typedef BaseClass*(*_CreateFactory)(ArgType...);
  
@@ -39,7 +39,7 @@ public:
 	}
  
 	/// 注册“创建类的对象的工厂函数”
-	static int regCreateObjFunc(const char* className, void* func)
+	static int regCreateObjFunc(std::string className, void* func)
 	{
 		_GetStaticFuncMap()[className] = func;
 		return 0;
@@ -47,9 +47,9 @@ public:
  
 private:
 	/// 获取 函数名==>函数指针 的映射。
-	static std::map<const char*, void*>& _GetStaticFuncMap()
+	static std::map<std::string, void*>& _GetStaticFuncMap()
 	{
-		static std::map<const char*, void*> _classMap;
+		static std::map<std::string, void*> _classMap;
 		return _classMap;
 	}
 };

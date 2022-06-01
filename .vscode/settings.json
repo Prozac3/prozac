@@ -44,6 +44,8 @@
         "numeric": "cpp",
         "random": "cpp",
         "list": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "map": "cpp",
+        "set": "cpp"
     }
 }

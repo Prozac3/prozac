@@ -158,6 +158,7 @@ namespace prozac
         {
         public:
             typedef std::shared_ptr<FormatItem> ptr;
+            FormatItem(const std::string& fmt = ""){};
             /**
              * @brief 析构函数
              */

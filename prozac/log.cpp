@@ -5,6 +5,8 @@
 #include <iostream>
 #include <functional>
 #include <yaml-cpp/yaml.h>
+#include <prozac/factory.h>
+#include <string.h>
 namespace prozac
 {
 
@@ -97,6 +99,8 @@ namespace prozac
         }
     };
 
+    CLASS_STRING_REGISTER(MessageFormatItem, "m", std::string)
+
     class LevelFormatItem : public LogFormatter::FormatItem
     {
     public:
@@ -106,6 +110,7 @@ namespace prozac
             os << LogLevel::ToString(event->getLevel());
         }
     };
+    CLASS_STRING_REGISTER(LevelFormatItem, "p", std::string)
 
     class ElapseFormatItem : public LogFormatter::FormatItem
     {
@@ -116,6 +121,7 @@ namespace prozac
             os << event->getElapse();
         }
     };
+    CLASS_STRING_REGISTER(ElapseFormatItem, "r", std::string)
 
     class NameFormatItem : public LogFormatter::FormatItem
     {
@@ -126,6 +132,7 @@ namespace prozac
             os << event->getLogger()->getName();
         }
     };
+    CLASS_STRING_REGISTER(NameFormatItem, "c", std::string)
 
     class ThreadIdFormatItem : public LogFormatter::FormatItem
     {
@@ -136,6 +143,7 @@ namespace prozac
             os << event->getThreadId();
         }
     };
+    CLASS_STRING_REGISTER(ThreadIdFormatItem, "t", std::string)
 
     class FiberIdFormatItem : public LogFormatter::FormatItem
     {
@@ -146,6 +154,7 @@ namespace prozac
             os << event->getFiberId();
         }
     };
+    CLASS_STRING_REGISTER(FiberIdFormatItem, "F", std::string)
 
     class ThreadNameFormatItem : public LogFormatter::FormatItem
     {
@@ -156,6 +165,7 @@ namespace prozac
             os << event->getThreadName();
         }
     };
+    CLASS_STRING_REGISTER(ThreadNameFormatItem, "N", std::string)
 
     class DateTimeFormatItem : public LogFormatter::FormatItem
     {
@@ -182,6 +192,7 @@ namespace prozac
     private:
         std::string m_format;
     };
+    CLASS_STRING_REGISTER(DateTimeFormatItem, "d", std::string)
 
     class FilenameFormatItem : public LogFormatter::FormatItem
     {
@@ -192,6 +203,7 @@ namespace prozac
             os << event->getFile();
         }
     };
+    CLASS_STRING_REGISTER(FilenameFormatItem, "f", std::string)
 
     class LineFormatItem : public LogFormatter::FormatItem
     {
@@ -202,6 +214,7 @@ namespace prozac
             os << event->getLine();
         }
     };
+    CLASS_STRING_REGISTER(LineFormatItem, "l", std::string)
 
     class NewLineFormatItem : public LogFormatter::FormatItem
     {
@@ -212,6 +225,7 @@ namespace prozac
             os << std::endl;
         }
     };
+    CLASS_STRING_REGISTER(NewLineFormatItem, "n", std::string)
 
     class StringFormatItem : public LogFormatter::FormatItem
     {
@@ -239,6 +253,7 @@ namespace prozac
     private:
         std::string m_string;
     };
+    CLASS_STRING_REGISTER(TabFormatItem, "T", std::string)
 
     LogFormatter::LogFormatter(const std::string &pattern)
         : m_pattern(pattern)
@@ -356,26 +371,26 @@ namespace prozac
         {
             vec.push_back(std::make_tuple(nstr, "", 0));
         }
-        static std::map<std::string, std::function<FormatItem::ptr(const std::string &str)>> s_format_items = {
-#define XX(str, C)                                                               \
-    {                                                                            \
-#str, [](const std::string &fmt) { return FormatItem::ptr(new C(fmt)); } \
-    }
+//         static std::map<std::string, std::function<FormatItem::ptr(const std::string &str)>> s_format_items = {
+// #define XX(str, C)                                                               
+//     {                                                                            
+// #str, [](const std::string &fmt) { return FormatItem::ptr(new C(fmt)); } 
+//     }
 
-            XX(m, MessageFormatItem),    // m:消息
-            XX(p, LevelFormatItem),      // p:日志级别
-            XX(r, ElapseFormatItem),     // r:累计毫秒数
-            XX(c, NameFormatItem),       // c:日志名称
-            XX(t, ThreadIdFormatItem),   // t:线程id
-            XX(n, NewLineFormatItem),    // n:换行
-            XX(d, DateTimeFormatItem),   // d:时间
-            XX(f, FilenameFormatItem),   // f:文件名
-            XX(l, LineFormatItem),       // l:行号
-            XX(T, TabFormatItem),        // T:Tab
-            XX(F, FiberIdFormatItem),    // F:协程id
-            XX(N, ThreadNameFormatItem), // N:线程名称
-#undef XX
-        };
+//             XX(m, MessageFormatItem),    // m:消息
+//             XX(p, LevelFormatItem),      // p:日志级别
+//             XX(r, ElapseFormatItem),     // r:累计毫秒数
+//             XX(c, NameFormatItem),       // c:日志名称
+//             XX(t, ThreadIdFormatItem),   // t:线程id
+//             XX(n, NewLineFormatItem),    // n:换行
+//             XX(d, DateTimeFormatItem),   // d:时间
+//             XX(f, FilenameFormatItem),   // f:文件名
+//             XX(l, LineFormatItem),       // l:行号
+//             XX(T, TabFormatItem),        // T:Tab
+//             XX(F, FiberIdFormatItem),    // F:协程id
+//             XX(N, ThreadNameFormatItem), // N:线程名称
+// #undef XX
+//         };
 
         for (auto &i : vec)
         {
@@ -385,15 +400,27 @@ namespace prozac
             }
             else
             {
-                auto it = s_format_items.find(std::get<0>(i));
-                if (it == s_format_items.end())
+                // auto it = .find(std::get<0>(i));
+                // if (it == s_format_items.end())
+                // {
+                //     m_items.push_back(FormatItem::ptr(new StringFormatItem("<<error_format %" + std::get<0>(i) + ">>")));
+                //     m_error = true;s_format_items
+                // }
+                // else
+                // {
+                //     m_items.push_back(it->second(std::get<1>(i)));
+                // }
+                std::string str = std::get<0>(i);
+                std::string fmt = std::get<1>(i);
+                FormatItem *item = Factory::CreateObj<FormatItem, const std::string &>(str, std::get<1>(i));
+                if (item)
                 {
-                    m_items.push_back(FormatItem::ptr(new StringFormatItem("<<error_format %" + std::get<0>(i) + ">>")));
-                    m_error = true;
+                    m_items.push_back(FormatItem::ptr(item));
                 }
                 else
                 {
-                    m_items.push_back(it->second(std::get<1>(i)));
+                    m_items.push_back(FormatItem::ptr(new StringFormatItem("<<error_format %" + std::get<0>(i) + ">>")));
+                    m_error = true;
                 }
             }
 
