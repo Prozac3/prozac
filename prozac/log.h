@@ -8,6 +8,27 @@
 #include <list>
 #include <prozac/mutex.h>
 #include <fstream>
+#include <map>
+
+#define PROZAC_LOG_LEVEL(logger, level)                                   \
+    if (true)                                                             \
+    prozac::LogEventWrap(prozac::LogEvent::ptr(new prozac::LogEvent(      \
+                             logger, level, __FILE__, __LINE__, 0,        \
+                             prozac::GetThreadId(), prozac::GetFiberId(), \
+                             time(0), prozac::Thread::GetName())))        \
+        .getSS()
+
+#define PROZAC_LOG_DEBUG(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::DEBUG)
+
+#define PROZAC_LOG_INFO(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::INFO)
+
+#define PROZAC_LOG_WARN(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::WARN)
+
+#define PROZAC_LOG_ERROR(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::ERROR)
+
+#define PROZAC_LOG_FATAL(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::FATAL)
+
+#define PROZAC_LOG_NAME(name) prozac::LoggerManager::GetInstance()->getLogger(name)
 namespace prozac
 {
     class Logger;
@@ -48,7 +69,6 @@ namespace prozac
          */
         static LogLevel::Level FromString(const std::string &str);
     };
-    
 
     class LogEvent
     {
@@ -75,6 +95,7 @@ namespace prozac
                  uint64_t fiber_id,
                  uint64_t time,
                  const std::string &thread_name);
+        ~LogEvent();
 
         const char *getFile() const { return m_file; }
 
@@ -158,7 +179,7 @@ namespace prozac
         {
         public:
             typedef std::shared_ptr<FormatItem> ptr;
-            FormatItem(const std::string& fmt = ""){};
+            FormatItem(const std::string &fmt = ""){};
             /**
              * @brief 析构函数
              */
@@ -257,12 +278,14 @@ namespace prozac
         LogFormatter::ptr m_formatter;
     };
 
+    class LoggerManager;
     /**
      * @brief 日志器
      */
+
     class Logger : public std::enable_shared_from_this<Logger>
     {
-        //friend class LoggerManager;
+        friend class LoggerManager;
 
     public:
         typedef std::shared_ptr<Logger> ptr;
@@ -383,6 +406,82 @@ namespace prozac
         std::ofstream m_filestream;
         /// 上次重新打开时间
         uint64_t m_lastTime = 0;
+    };
+
+    /**
+     * @brief 日志器管理类
+     */
+    class LoggerManager
+    {
+    private:
+        LoggerManager();
+
+    public:
+        typedef Spinlock MutexType;
+        typedef std::shared_ptr<LoggerManager> ptr;
+        /**
+         * @brief 构造函数
+         */
+
+        /**
+         * @brief 获取日志器
+         * @param[in] name 日志器名称
+         */
+        Logger::ptr getLogger(const std::string &name);
+
+        /**
+         * @brief 初始化
+         */
+        void init();
+
+        /**
+         * @brief 返回主日志器
+         */
+        Logger::ptr getRoot() const { return m_root; }
+
+        static LoggerManager::ptr GetInstance();
+
+    private:
+        /// Mutex
+        MutexType m_mutex;
+        /// 日志器容器
+        std::map<std::string, Logger::ptr> m_loggers;
+        /// 主日志器
+        Logger::ptr m_root;
+    };
+
+    /**
+     * @brief 日志事件包装器
+     */
+    class LogEventWrap
+    {
+    public:
+        /**
+         * @brief 构造函数
+         * @param[in] e 日志事件
+         */
+        LogEventWrap(LogEvent::ptr e);
+
+        /**
+         * @brief 析构函数
+         */
+        ~LogEventWrap();
+
+        /**
+         * @brief 获取日志事件
+         */
+        LogEvent::ptr getEvent() const { return m_event; }
+
+        /**
+         * @brief 获取日志内容流
+         */
+        std::stringstream &getSS();
+
+    private:
+        /**
+         * @brief 日志事件
+         */
+        LogEvent::ptr m_event;
     };
 }
 

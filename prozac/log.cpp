@@ -70,6 +70,11 @@ namespace prozac
     {
     }
 
+    LogEvent::~LogEvent()
+    {
+        std::cout <<"LogEvent::~LogEvent" <<std::endl;
+    }
+
     void LogEvent::format(const char *fmt, ...)
     {
         va_list al;
@@ -371,26 +376,26 @@ namespace prozac
         {
             vec.push_back(std::make_tuple(nstr, "", 0));
         }
-//         static std::map<std::string, std::function<FormatItem::ptr(const std::string &str)>> s_format_items = {
-// #define XX(str, C)                                                               
-//     {                                                                            
-// #str, [](const std::string &fmt) { return FormatItem::ptr(new C(fmt)); } 
-//     }
+        //         static std::map<std::string, std::function<FormatItem::ptr(const std::string &str)>> s_format_items = {
+        // #define XX(str, C)
+        //     {
+        // #str, [](const std::string &fmt) { return FormatItem::ptr(new C(fmt)); }
+        //     }
 
-//             XX(m, MessageFormatItem),    // m:消息
-//             XX(p, LevelFormatItem),      // p:日志级别
-//             XX(r, ElapseFormatItem),     // r:累计毫秒数
-//             XX(c, NameFormatItem),       // c:日志名称
-//             XX(t, ThreadIdFormatItem),   // t:线程id
-//             XX(n, NewLineFormatItem),    // n:换行
-//             XX(d, DateTimeFormatItem),   // d:时间
-//             XX(f, FilenameFormatItem),   // f:文件名
-//             XX(l, LineFormatItem),       // l:行号
-//             XX(T, TabFormatItem),        // T:Tab
-//             XX(F, FiberIdFormatItem),    // F:协程id
-//             XX(N, ThreadNameFormatItem), // N:线程名称
-// #undef XX
-//         };
+        //             XX(m, MessageFormatItem),    // m:消息
+        //             XX(p, LevelFormatItem),      // p:日志级别
+        //             XX(r, ElapseFormatItem),     // r:累计毫秒数
+        //             XX(c, NameFormatItem),       // c:日志名称
+        //             XX(t, ThreadIdFormatItem),   // t:线程id
+        //             XX(n, NewLineFormatItem),    // n:换行
+        //             XX(d, DateTimeFormatItem),   // d:时间
+        //             XX(f, FilenameFormatItem),   // f:文件名
+        //             XX(l, LineFormatItem),       // l:行号
+        //             XX(T, TabFormatItem),        // T:Tab
+        //             XX(F, FiberIdFormatItem),    // F:协程id
+        //             XX(N, ThreadNameFormatItem), // N:线程名称
+        // #undef XX
+        //         };
 
         for (auto &i : vec)
         {
@@ -645,4 +650,55 @@ namespace prozac
         MutexType::Lock lock(m_mutex);
         return m_formatter;
     }
+
+    LoggerManager::LoggerManager()
+    {
+        m_root.reset(new Logger);
+        m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
+
+        m_loggers[m_root->m_name] = m_root;
+
+        init();
+    }
+
+    Logger::ptr LoggerManager::getLogger(const std::string &name)
+    {
+        MutexType::Lock lock(m_mutex);
+        auto it = m_loggers.find(name);
+        if (it != m_loggers.end())
+        {
+            return it->second;
+        }
+
+        Logger::ptr logger(new Logger(name));
+        logger->m_root = m_root;
+        m_loggers[name] = logger;
+        return logger;
+    }
+
+    void LoggerManager::init()
+    {
+    }
+
+    LoggerManager::ptr LoggerManager::GetInstance()
+    {
+        static LoggerManager::ptr MgrSingle(new LoggerManager);
+        return MgrSingle;
+    }
+
+    LogEventWrap::LogEventWrap(LogEvent::ptr e)
+        : m_event(e)
+    {
+    }
+
+    LogEventWrap::~LogEventWrap()
+    {
+        m_event->getLogger()->log(m_event);
+    }
+
+    std::stringstream &LogEventWrap::getSS()
+    {
+        return m_event->getSS();
+    }
+
 }
