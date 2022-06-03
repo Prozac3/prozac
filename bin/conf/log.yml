@@ -1,0 +1,24 @@
+logs:
+    - name: root
+      level: info
+      formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+      appenders:
+          - type: FileLogAppender
+            file: /apps/logs/sylar/root.txt
+            level: info
+          - type: FileLogAppender
+            file: /apps/logs/sylar/root_error.txt
+            level: error
+          - type: StdoutLogAppender
+            level: info
+    - name: system
+      level: info
+      formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+      appenders:
+          - type: FileLogAppender
+            file: /apps/logs/sylar/system.txt
+            level: info
+          - type: FileLogAppender
+            file: /apps/logs/sylar/system_error.txt
+            level: error
+          - type: StdoutLogAppender
