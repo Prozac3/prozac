@@ -72,7 +72,7 @@ namespace prozac
 
     LogEvent::~LogEvent()
     {
-        std::cout <<"LogEvent::~LogEvent" <<std::endl;
+        
     }
 
     void LogEvent::format(const char *fmt, ...)
@@ -655,7 +655,9 @@ namespace prozac
     {
         m_root.reset(new Logger);
         m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
-
+        LogAppender::ptr error_log(new FileLogAppender("./log/root_error.log"));
+        error_log->setLevel(LogLevel::ERROR);
+        m_root->addAppender(error_log);
         m_loggers[m_root->m_name] = m_root;
 
         init();
