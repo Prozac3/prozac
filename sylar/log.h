@@ -11,12 +11,12 @@
 #include <map>
 #include <sylar/util.h>
 
-#define SYLAR_LOG_LEVEL(logger, level)                                   \
-    if (true)                                                             \
+#define SYLAR_LOG_LEVEL(logger, level)                                 \
+    if (true)                                                          \
     sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(      \
-                             logger, level, __FILE__, __LINE__, 0,        \
-                             sylar::GetThreadId(), sylar::GetFiberId(), \
-                             time(0), sylar::Thread::GetName())))        \
+                            logger, level, __FILE__, __LINE__, 0,      \
+                            sylar::GetThreadId(), sylar::GetFiberId(), \
+                            time(0), sylar::Thread::GetName())))       \
         .getSS()
 
 #define SYLAR_LOG_DEBUG(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
@@ -441,6 +441,11 @@ namespace sylar
          * @brief 返回主日志器
          */
         Logger::ptr getRoot() const { return m_root; }
+
+        /**
+         * @brief 将所有的日志器配置转成YAML String
+         */
+        std::string toYamlString();
 
         static LoggerManager::ptr GetInstance();
 
