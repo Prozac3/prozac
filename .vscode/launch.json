@@ -8,7 +8,7 @@
             "name": "(gdb) 启动",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/test_log",
+            "program": "${workspaceFolder}/bin/test_config",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

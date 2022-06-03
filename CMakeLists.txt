@@ -39,5 +39,9 @@ add_executable(test_log tests/test_log.cpp)
 add_dependencies(test_log sylar)
 target_link_libraries(test_log ${LIBS})
 
+add_executable(test_config tests/test_config.cpp)
+add_dependencies(test_config sylar)
+target_link_libraries(test_config ${LIBS})
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
