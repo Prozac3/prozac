@@ -11,7 +11,6 @@
 #include <yaml-cpp/yaml.h>
 #include <string.h>
 
-
 namespace sylar
 {
 
@@ -819,6 +818,11 @@ namespace sylar
                         std::cout << "log config error: appender type is invalid, " << a
                                   << std::endl;
                         continue;
+                    }
+
+                    if (a["level"].IsDefined())
+                    {
+                        lad.level = LogLevel::FromString(a["level"].as<std::string>());
                     }
 
                     ld.appenders.push_back(lad);

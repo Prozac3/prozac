@@ -7,8 +7,8 @@ int main(int argc, char **argv)
 {
     sylar::Thread::SetName("main");
     sylar::Config::LoadFromConfDir("conf");
-    auto logger = SYLAR_LOG_NAME("root");
-    SYLAR_LOG_LEVEL(logger, sylar::LogLevel::INFO) << "This is INFO!";
+    auto logger = SYLAR_LOG_NAME("system");
+    SYLAR_LOG_INFO(logger) << "This is INFO!";
     SYLAR_LOG_ERROR(logger) << "This is ERROR!";
     SYLAR_LOG_FATAL(logger) << "This is FATAL!";
     return 0;

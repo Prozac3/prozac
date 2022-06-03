@@ -268,7 +268,10 @@ namespace sylar
         /**
          * @brief 设置日志级别
          */
-        void setLevel(LogLevel::Level val) { m_level = val; }
+        void setLevel(LogLevel::Level val)
+        {
+            m_level = val;
+        }
 
     protected:
         /// 日志级别
