@@ -1,9 +1,9 @@
-#include <prozac/fiber.h>
+#include <sylar/fiber.h>
 #include <iostream>
 
 void test_fiber()
 {
-    auto cur = prozac::Fiber::GetThis();
+    auto cur = sylar::Fiber::GetThis();
     auto ptr = cur.get();
     cur.reset();
     ptr->sleep(1000);
@@ -18,13 +18,13 @@ void test_except()
 int main(int argc, char **argv)
 {
     {
-        prozac::Fiber::ptr fib1 = prozac::Fiber::CreatFiber(test_fiber);
+        sylar::Fiber::ptr fib1 = sylar::Fiber::CreatFiber(test_fiber);
         fib1->start();
         fib1->resume();
     }
 
     {
-        prozac::Fiber::ptr fib1 = prozac::Fiber::CreatFiber(test_fiber);
+        sylar::Fiber::ptr fib1 = sylar::Fiber::CreatFiber(test_fiber);
         fib1->start();
         fib1->resume();
     }

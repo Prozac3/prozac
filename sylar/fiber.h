@@ -1,10 +1,10 @@
-#ifndef __PROZAC_FIBER_H__
-#define __PROZAC_FIBER_H__
+#ifndef __SYLAR_FIBER_H__
+#define __SYLAR_FIBER_H__
 #include <stdint.h>
 #include <ucontext.h>
 #include <functional>
 #include <memory>
-namespace prozac
+namespace sylar
 {
     //协程
     class Fiber : public std::enable_shared_from_this<Fiber>

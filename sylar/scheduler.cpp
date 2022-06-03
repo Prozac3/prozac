@@ -1,13 +1,13 @@
-#include <prozac/scheduler.h>
+#include <sylar/scheduler.h>
 
-namespace prozac
+namespace sylar
 {
     void *Scheduler::WokerThread::run(void *arg)
     {
         WokerThread *thr = (WokerThread *)arg;
         SetThis((Thread *)thr);
         SetName(thr->m_name);
-        thr->m_id = prozac::GetThreadId();
+        thr->m_id = sylar::GetThreadId();
         pthread_setname_np(pthread_self(), thr->m_name.substr(0, 15).c_str());
         thr->m_semaphore.notify();
         Fiber::GetThis();
@@ -31,7 +31,7 @@ namespace prozac
 
             //休眠队列
             {
-                auto t = prozac::GetCurrentMS();
+                auto t = sylar::GetCurrentMS();
                 while (!thr->t_sleep.empty())
                 {
                     auto task = thr->t_sleep.top();
@@ -83,7 +83,7 @@ namespace prozac
                     {
                         thr->t_sleep.push(std::move(task));
                     }
-                    else if (PROZAC_UNLIKELY(task->fiber->getState() == Fiber::READY))
+                    else if (SYLAR_UNLIKELY(task->fiber->getState() == Fiber::READY))
                     {
                         thr->t_ready.push(std::move(task));
                     }
@@ -103,13 +103,13 @@ namespace prozac
         AllocThread *thr = (AllocThread *)arg;
         SetThis((Thread *)thr);
         SetName(thr->m_name);
-        thr->m_id = prozac::GetThreadId();
+        thr->m_id = sylar::GetThreadId();
         pthread_setname_np(pthread_self(), thr->m_name.substr(0, 15).c_str());
         thr->m_semaphore.notify();
         size_t k = 0;
-        while (PROZAC_LIKELY((!thr->m_stop) || (thr->m_count > 0)))
+        while (SYLAR_LIKELY((!thr->m_stop) || (thr->m_count > 0)))
         {
-            if (PROZAC_UNLIKELY(thr->m_workers.size() == 0))
+            if (SYLAR_UNLIKELY(thr->m_workers.size() == 0))
             {
                 continue;
             }
@@ -221,7 +221,7 @@ namespace prozac
     void Scheduler::submit(Scheduler::Task::ptr t)
     {
         {
-            if (PROZAC_LIKELY(!m_stop))
+            if (SYLAR_LIKELY(!m_stop))
             {
                 Mutex::Lock lock(m_mutex);
                 if (m_tasks.size() < 10000)

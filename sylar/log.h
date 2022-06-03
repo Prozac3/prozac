@@ -1,35 +1,38 @@
-#ifndef __PROZAC_LOG_H__
-#define __PROZAC_LOG_H__
+#ifndef __SYLAR_LOG_H__
+#define __SYLAR_LOG_H__
 #include <string.h>
 #include <memory>
 #include <stdint.h>
 #include <sstream>
 #include <vector>
 #include <list>
-#include <prozac/mutex.h>
+#include <sylar/mutex.h>
 #include <fstream>
 #include <map>
+#include <sylar/util.h>
 
-#define PROZAC_LOG_LEVEL(logger, level)                                   \
+#define SYLAR_LOG_LEVEL(logger, level)                                   \
     if (true)                                                             \
-    prozac::LogEventWrap(prozac::LogEvent::ptr(new prozac::LogEvent(      \
+    sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(      \
                              logger, level, __FILE__, __LINE__, 0,        \
-                             prozac::GetThreadId(), prozac::GetFiberId(), \
-                             time(0), prozac::Thread::GetName())))        \
+                             sylar::GetThreadId(), sylar::GetFiberId(), \
+                             time(0), sylar::Thread::GetName())))        \
         .getSS()
 
-#define PROZAC_LOG_DEBUG(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::DEBUG)
+#define SYLAR_LOG_DEBUG(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
 
-#define PROZAC_LOG_INFO(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::INFO)
+#define SYLAR_LOG_INFO(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::INFO)
 
-#define PROZAC_LOG_WARN(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::WARN)
+#define SYLAR_LOG_WARN(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::WARN)
 
-#define PROZAC_LOG_ERROR(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::ERROR)
+#define SYLAR_LOG_ERROR(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::ERROR)
 
-#define PROZAC_LOG_FATAL(logger) PROZAC_LOG_LEVEL(logger, prozac::LogLevel::FATAL)
+#define SYLAR_LOG_FATAL(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::FATAL)
 
-#define PROZAC_LOG_NAME(name) prozac::LoggerManager::GetInstance()->getLogger(name)
-namespace prozac
+#define SYLAR_LOG_NAME(name) sylar::LoggerManager::GetInstance()->getLogger(name)
+
+#define SYLAR_LOG_ROOT() SYLAR_LOG_NAME("root")
+namespace sylar
 {
     class Logger;
     /**

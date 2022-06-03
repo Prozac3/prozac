@@ -1,16 +1,16 @@
-#ifndef __PROZAC_SCHEDULER_H__
-#define __PROZAC_SCHEDULER_H__
-#include <prozac/fiber.h>
-#include <prozac/thread.h>
+#ifndef __SYLAR_SCHEDULER_H__
+#define __SYLAR_SCHEDULER_H__
+#include <sylar/fiber.h>
+#include <sylar/thread.h>
 #include <memory>
 #include <queue>
 #include <vector>
 #include <list>
-#include <prozac/util.h>
-#include <prozac/macro.h>
+#include <sylar/util.h>
+#include <sylar/macro.h>
 #include <random>
 #include <atomic>
-namespace prozac
+namespace sylar
 {
     //多线程协程调度器
     class Scheduler
@@ -27,8 +27,8 @@ namespace prozac
             Task(Fiber::ptr f, int thr = -1, uint16_t pri = 5)
                 : fiber(f), thread(thr), priority(pri)
             {
-                lasttime = prozac::GetCurrentUS();
-                if (PROZAC_UNLIKELY(pri > 9))
+                lasttime = sylar::GetCurrentUS();
+                if (SYLAR_UNLIKELY(pri > 9))
                 {
                     priority = 9;
                 }

@@ -3,7 +3,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
-namespace prozac
+#include <cxxabi.h>
+namespace sylar
 {
     /**
      * @brief 获取线程ID
@@ -56,6 +57,12 @@ namespace prozac
         static bool OpenForWrite(std::ofstream &ofs, const std::string &filename, std::ios_base::openmode mode);
     };
 
+    template <class T>
+    const char *TypeToName()
+    {
+        static const char *s_name = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr);
+        return s_name;
+    }
 }
 
 #endif

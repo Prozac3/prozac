@@ -1,7 +1,7 @@
 #ifndef _SYLAR_NONCOPYABLE_H_
 #define _SYLAR_NONCOPYABLE_H_
 
-namespace prozac
+namespace sylar
 {
 
     /**

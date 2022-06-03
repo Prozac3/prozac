@@ -1,12 +1,12 @@
-#include <prozac/scheduler.h>
+#include <sylar/scheduler.h>
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
-prozac::Mutex mut;
+sylar::Mutex mut;
 void test_scheduler()
 {
     mut.lock();
-    std::cout << "pid: " << prozac::GetThreadId() << " say hello" << std::endl;
+    std::cout << "pid: " << sylar::GetThreadId() << " say hello" << std::endl;
     mut.unlock();
 }
 
@@ -14,14 +14,14 @@ void test_sleep()
 {
     mut.lock();
     int t = rand() % 1000;
-    std::cout << "pid: " << prozac::GetThreadId()
-              << " fiber_id: " << prozac::GetFiberId()
+    std::cout << "pid: " << sylar::GetThreadId()
+              << " fiber_id: " << sylar::GetFiberId()
               << "   sleep for " << t << "ms" << std::endl;
     mut.unlock();
-    prozac::Fiber::GetThis()->sleep(t);
+    sylar::Fiber::GetThis()->sleep(t);
     mut.lock();
-    std::cout << "pid: " << prozac::GetThreadId()
-              << " fiber_id: " << prozac::GetFiberId()
+    std::cout << "pid: " << sylar::GetThreadId()
+              << " fiber_id: " << sylar::GetFiberId()
               << " wake" << std::endl;
     mut.unlock();
 }
@@ -29,24 +29,24 @@ void test_sleep()
 void test_hold()
 {
     mut.lock();
-    std::cout << "pid: " << prozac::GetThreadId()
-              << " fiber_id: " << prozac::GetFiberId()
+    std::cout << "pid: " << sylar::GetThreadId()
+              << " fiber_id: " << sylar::GetFiberId()
               << "   hold " << std::endl;
     mut.unlock();
-    prozac::Fiber::GetThis()->hold();
+    sylar::Fiber::GetThis()->hold();
 
     while (rand() % 1000 < 950)
     {
-        prozac::Fiber::GetThis()->hold();
+        sylar::Fiber::GetThis()->hold();
     }
 
     mut.lock();
-    std::cout << "pid: " << prozac::GetThreadId()
-              << " fiber_id: " << prozac::GetFiberId()
+    std::cout << "pid: " << sylar::GetThreadId()
+              << " fiber_id: " << sylar::GetFiberId()
               << "   ready" << std::endl;
     mut.unlock();
 
-    prozac::Fiber::GetThis()->yield();
+    sylar::Fiber::GetThis()->yield();
 }
 
 void test()
@@ -70,19 +70,19 @@ void test()
 int main(int argc, char **argv)
 {
     srand(time(NULL));
-    auto start = prozac::GetCurrentMS();
-    prozac::Scheduler sch(12, "sch1");
+    auto start = sylar::GetCurrentMS();
+    sylar::Scheduler sch(12, "sch1");
     int k = 200000;
     while (k > 0)
     {
-        prozac::Fiber::ptr f = prozac::Fiber::CreatFiber(test);
-        prozac::Scheduler::Task::ptr task(new prozac::Scheduler::Task(std::move(f)));
+        sylar::Fiber::ptr f = sylar::Fiber::CreatFiber(test);
+        sylar::Scheduler::Task::ptr task(new sylar::Scheduler::Task(std::move(f)));
         sch.submit(std::move(task));
         k--;
     }
 
     sch.stop();
-    auto end = prozac::GetCurrentMS();
+    auto end = sylar::GetCurrentMS();
     std::cout << "running time: " << end - start << " ms" << std::endl;
     return 0;
 }

@@ -1,10 +1,10 @@
-#ifndef __PROZAC_MUTEX_H__
-#define __PROZAC_MUTEX_H__
-#include <prozac/noncopyable.h>
+#ifndef __SYLAR_MUTEX_H__
+#define __SYLAR_MUTEX_H__
+#include <sylar/noncopyable.h>
 #include <memory>
 #include <semaphore.h>
 #include <atomic>
-namespace prozac
+namespace sylar
 {
     class Semaphore : Noncopyable
     {

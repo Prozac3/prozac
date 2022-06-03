@@ -1,13 +1,13 @@
-#include <prozac/log.h>
+#include <sylar/log.h>
 #include <stdarg.h>
-#include <prozac/util.h>
+#include <sylar/util.h>
 #include <map>
 #include <iostream>
 #include <functional>
 #include <yaml-cpp/yaml.h>
-#include <prozac/factory.h>
+#include <sylar/factory.h>
 #include <string.h>
-namespace prozac
+namespace sylar
 {
 
     const char *LogLevel::ToString(LogLevel::Level level)
@@ -610,7 +610,7 @@ namespace prozac
     void Logger::setFormatter(const std::string &val)
     {
         std::cout << "---" << val << std::endl;
-        prozac::LogFormatter::ptr new_val(new prozac::LogFormatter(val));
+        sylar::LogFormatter::ptr new_val(new sylar::LogFormatter(val));
         if (new_val->isError())
         {
             std::cout << "Logger setFormatter name=" << m_name

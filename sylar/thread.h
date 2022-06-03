@@ -1,12 +1,12 @@
-#ifndef __PROZAC_THREAD_H__
-#define __PROZAC_THREAD_H__
+#ifndef __SYLAR_THREAD_H__
+#define __SYLAR_THREAD_H__
 
 #include <pthread.h>
-#include <prozac/mutex.h>
+#include <sylar/mutex.h>
 #include <memory>
 #include <functional>
 
-namespace prozac
+namespace sylar
 {
     class Thread
     {

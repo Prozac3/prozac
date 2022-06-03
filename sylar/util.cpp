@@ -1,5 +1,5 @@
 #include <string.h>
-#include <prozac/util.h>
+#include <sylar/util.h>
 #include <sstream>
 #include <execinfo.h>
 #include <cxxabi.h>
@@ -10,10 +10,10 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-#include <prozac/fiber.h>
+#include <sylar/fiber.h>
 #include <istream>
 #include <fstream>
-namespace prozac
+namespace sylar
 {
 
     pid_t GetThreadId()

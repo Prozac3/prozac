@@ -1,5 +1,5 @@
-#include <prozac/mutex.h>
-namespace prozac
+#include <sylar/mutex.h>
+namespace sylar
 {
     Semaphore::Semaphore(uint32_t count)
     {

@@ -1,6 +1,6 @@
-#include <prozac/thread.h>
-#include <prozac/util.h>
-namespace prozac
+#include <sylar/thread.h>
+#include <sylar/util.h>
+namespace sylar
 {
     static thread_local Thread *this_thread = nullptr;
     static thread_local std::string this_thread_name = "UNKNOW";
@@ -78,7 +78,7 @@ namespace prozac
         Thread *thread = (Thread *)arg;
         this_thread = thread;
         this_thread_name = thread->m_name;
-        thread->m_id = prozac::GetThreadId();
+        thread->m_id = sylar::GetThreadId();
         pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
         std::function<void()> cb;
         cb.swap(thread->m_cb);
