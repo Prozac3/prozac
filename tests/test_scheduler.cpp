@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
+#include <sylar/config.h>
 sylar::Mutex mut;
 void test_scheduler()
 {
@@ -71,14 +72,23 @@ int main(int argc, char **argv)
 {
     srand(time(NULL));
     auto start = sylar::GetCurrentMS();
+
+    sylar::Thread::SetName("main");
+    sylar::Config::LoadFromConfDir("conf");
     sylar::Scheduler sch(12, "sch1");
-    int k = 200000;
+    sch.start();
+    int k = 20000;
     while (k > 0)
     {
         sylar::Fiber::ptr f = sylar::Fiber::CreatFiber(test);
         sylar::Scheduler::Task::ptr task(new sylar::Scheduler::Task(std::move(f)));
         sch.submit(std::move(task));
         k--;
+    }
+
+    while(true)
+    {
+
     }
 
     sch.stop();

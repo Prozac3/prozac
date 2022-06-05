@@ -7,6 +7,7 @@
 #include <vector>
 #include <list>
 #include <sylar/mutex.h>
+#include <sylar/thread.h>
 #include <fstream>
 #include <map>
 #include <sylar/util.h>

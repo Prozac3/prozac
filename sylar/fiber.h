@@ -84,6 +84,8 @@ namespace sylar
          * @brief 获取协程休眠终止时间(ms)
          */
         uint64_t getWaketime() const { return waketime; }
+
+        void reset(std::function<void()> cb);
         ~Fiber();
 
     public:

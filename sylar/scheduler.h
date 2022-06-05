@@ -91,7 +91,7 @@ namespace sylar
              * @param name 线程名称
              * @param stop 线程开关
              */
-            WokerThread(const std::string &name, std::atomic_bool &stop);
+            WokerThread(const std::string &name, std::atomic_bool &stop, std::function<void()> idle);
 
         private:
             /**
@@ -118,6 +118,7 @@ namespace sylar
             std::list<Task::ptr> t_hold; // HOLD状态任务
             Mutex m_mutex;               //线程锁
             std::atomic_bool &m_stop;    //线程开关
+            std::function<void()> m_idle;
         };
 
         //任务分配线程
@@ -163,9 +164,14 @@ namespace sylar
          * @param name 调度器名称
          */
         Scheduler(uint16_t count, const std::string &name);
-        ~Scheduler();
+        virtual ~Scheduler();
         /**
-         * @brief 停止调度
+         * @brief 启动协程调度器
+         *
+         */
+        void start();
+        /**
+         * @brief 停止协程调度器
          */
         void stop();
 
@@ -175,6 +181,17 @@ namespace sylar
          */
         void submit(Scheduler::Task::ptr task);
 
+        /**
+         * @brief 提交任务
+         * @param task 任务
+         */
+        void submit(Fiber::ptr fb, int thr = -1, uint16_t pri = 5);
+
+        static Scheduler* GetThis();
+
+    protected:
+        virtual void idle();
+
     private:
         Mutex m_mutex;                           //任务队列锁
         std::queue<Task::ptr> m_tasks;           //任务队列
@@ -182,7 +199,7 @@ namespace sylar
         uint16_t m_thread_count;                 //工作线程数量
         std::string m_name;                      //调度器名称
         AllocThread::ptr m_alloc;                //任务分配线程
-        std::atomic_bool m_stop{false};          //调度器开关
+        std::atomic_bool m_stop{true};           //调度器开关
         std::atomic<uint64_t> m_count{0};        //任务数量
     };
 }

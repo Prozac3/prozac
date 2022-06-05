@@ -1,7 +1,10 @@
 #include <sylar/scheduler.h>
-
+#include <sylar/log.h>
 namespace sylar
 {
+    static Logger::ptr sys_logger = SYLAR_LOG_NAME("system");
+    static thread_local Scheduler* t_scheduler = nullptr;
+
     void *Scheduler::WokerThread::run(void *arg)
     {
         WokerThread *thr = (WokerThread *)arg;
@@ -13,7 +16,11 @@ namespace sylar
         Fiber::GetThis();
         while ((!thr->m_stop) || (thr->m_count > 0))
         {
-
+            if (thr->m_count == 0)
+            {
+                thr->m_idle();
+                continue;
+            }
             //尝试取出任务
             {
                 if (thr->m_mutex.trylock())
@@ -140,8 +147,8 @@ namespace sylar
         return 0;
     }
 
-    Scheduler::WokerThread::WokerThread(const std::string &name, std::atomic_bool &stop)
-        : m_name(name), m_stop(stop)
+    Scheduler::WokerThread::WokerThread(const std::string &name, std::atomic_bool &stop, std::function<void()> idle)
+        : m_name(name), m_stop(stop), m_idle(idle)
     {
         if (name.empty())
         {
@@ -164,14 +171,14 @@ namespace sylar
     Scheduler::AllocThread::AllocThread(Mutex &mutex,
                                         std::vector<WokerThread::ptr> &works,
                                         std::queue<Task::ptr> &tasks,
-                                        std::atomic<uint64_t>& count,
+                                        std::atomic<uint64_t> &count,
                                         std::atomic_bool &stop,
                                         const std::string &name)
         : m_mutex(mutex),
           m_workers(works),
           m_tasks(tasks),
           m_count(count),
-          m_stop(stop)  
+          m_stop(stop)
 
     {
         m_name = name;
@@ -192,26 +199,35 @@ namespace sylar
         : m_thread_count(count),
           m_name(name)
     {
-        for (int i = 0; i < count; i++)
-        {
-            WokerThread::ptr thr(new WokerThread(m_name + "_woker" + std::to_string(i), m_stop));
-            m_workers.push_back(thr);
-        }
-        m_tasks = std::queue<Scheduler::Task::ptr>();
-        m_alloc = AllocThread::ptr(new AllocThread(m_mutex, m_workers, m_tasks, m_count,m_stop, m_name + "_alloc"));
+        t_scheduler = this;
     }
 
     Scheduler::~Scheduler()
     {
-        if(!m_stop){
+        if (!m_stop)
+        {
             stop();
+        }
+    }
+    void Scheduler::start()
+    {
+        if (m_stop)
+        {
+            m_stop = false;
+            for (int i = 0; i < m_thread_count; i++)
+            {
+                WokerThread::ptr thr(new WokerThread(m_name + "_woker" + std::to_string(i), m_stop, std::bind(&Scheduler::idle, this)));
+                m_workers.push_back(thr);
+            }
+            m_tasks = std::queue<Scheduler::Task::ptr>();
+            m_alloc = AllocThread::ptr(new AllocThread(m_mutex, m_workers, m_tasks, m_count, m_stop, m_name + "_alloc"));
         }
     }
 
     void Scheduler::stop()
     {
         m_stop = true;
-        for(auto woker:m_workers)
+        for (auto woker : m_workers)
         {
             woker->join();
         }
@@ -235,6 +251,21 @@ namespace sylar
                 }
             }
         }
+    }
+
+    void Scheduler::submit(Fiber::ptr fb, int thr, uint16_t pri)
+    {
+        submit(Task::ptr(new Task(std::move(fb), thr, pri)));
+    }
+
+    void Scheduler::idle()
+    {
+        SYLAR_LOG_INFO(sys_logger) << "pid: " << sylar::GetThreadId() << " This thread idle";
+    }
+
+    Scheduler* Scheduler::GetThis()
+    {
+        return t_scheduler;
     }
 
 }

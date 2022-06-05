@@ -1,5 +1,8 @@
 #include <sylar/fiber.h>
+
 #include <sylar/macro.h>
+#include <sylar/util.h>
+#include <sylar/log.h>
 #include <iostream>
 #include <atomic>
 namespace sylar
@@ -24,6 +27,7 @@ namespace sylar
     {
         this_fiber = fiber;
     }
+
     Fiber::ptr Fiber::GetThis()
     {
         if (this_fiber)
@@ -36,6 +40,7 @@ namespace sylar
         main_fiber = cur;
         return this_fiber->shared_from_this();
     }
+
     void Fiber::MainFunc()
     {
         Fiber::ptr cur = GetThis();
@@ -141,15 +146,14 @@ namespace sylar
                 free(m_stack);
             }
         }
-      
     }
 
     void Fiber::start()
     {
         SYLAR_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
-                       "Fiber::start() must be called in main fiber.");
+                      "Fiber::start() must be called in main fiber.");
         SYLAR_ASSERT2(m_state == INIT,
-                       "The Fiber that is not init cannot be started.");
+                      "The Fiber that is not init cannot be started.");
         m_state = READY;
     }
 
@@ -157,12 +161,12 @@ namespace sylar
     {
 
         SYLAR_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
-                       "Fiber::resume() must be called in main fiber.");
+                      "Fiber::resume() must be called in main fiber.");
 
         SetThis(this);
 
         SYLAR_ASSERT2(m_state == READY,
-                       "The Fiber that is not ready cannot be resumed");
+                      "The Fiber that is not ready cannot be resumed");
         m_state = EXEC;
         if (swapcontext(&main_fiber->m_ctx, &m_ctx))
         {
@@ -173,10 +177,10 @@ namespace sylar
     void Fiber::yield()
     {
         SYLAR_ASSERT2(GetThis()->m_id != GetMainFiber()->m_id,
-                       "Fiber::yield() must be called in child fiber.");
+                      "Fiber::yield() must be called in child fiber.");
         SetThis(GetMainFiber().get());
         SYLAR_ASSERT2(m_state == EXEC,
-                       "The Fiber that is not executing cannot be yielded");
+                      "The Fiber that is not executing cannot be yielded");
         m_state = READY;
         if (swapcontext(&m_ctx, &main_fiber->m_ctx))
         {
@@ -187,10 +191,10 @@ namespace sylar
     void Fiber::hold()
     {
         SYLAR_ASSERT2(GetThis()->m_id != GetMainFiber()->m_id,
-                       "Fiber::hold() must be called in child fiber.");
+                      "Fiber::hold() must be called in child fiber.");
         SetThis(GetMainFiber().get());
         SYLAR_ASSERT2(m_state == EXEC,
-                       "The Fiber that is not executing cannot be yielded");
+                      "The Fiber that is not executing cannot be yielded");
         m_state = HOLD;
         if (swapcontext(&m_ctx, &main_fiber->m_ctx))
         {
@@ -202,12 +206,12 @@ namespace sylar
     {
 
         SYLAR_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
-                       "Fiber::notify() must be called in main fiber.");
+                      "Fiber::notify() must be called in main fiber.");
 
         SetThis(this);
 
         SYLAR_ASSERT2(m_state == HOLD,
-                       "The Fiber that is not hold cannot be notified");
+                      "The Fiber that is not hold cannot be notified");
         m_state = EXEC;
         if (swapcontext(&main_fiber->m_ctx, &m_ctx))
         {
@@ -218,7 +222,7 @@ namespace sylar
     void Fiber::stop()
     {
         SYLAR_ASSERT2(GetThis()->m_id != GetMainFiber()->m_id,
-                       "Fiber::stop() must be called in child fiber.");
+                      "Fiber::stop() must be called in child fiber.");
         SetThis(GetMainFiber().get());
         m_state = DESTROY;
         if (swapcontext(&m_ctx, &main_fiber->m_ctx))
@@ -230,10 +234,10 @@ namespace sylar
     void Fiber::sleep(uint64_t t)
     {
         SYLAR_ASSERT2(GetThis()->m_id != GetMainFiber()->m_id,
-                       "Fiber::sleep() must be called in child fiber.");
+                      "Fiber::sleep() must be called in child fiber.");
         SetThis(GetMainFiber().get());
         SYLAR_ASSERT2(m_state == EXEC,
-                       "The Fiber that is not executing cannot sleep");
+                      "The Fiber that is not executing cannot sleep");
         m_state = SLEEP;
         waketime = GetCurrentMS() + t;
         if (swapcontext(&m_ctx, &main_fiber->m_ctx))
@@ -245,16 +249,34 @@ namespace sylar
     void Fiber::awake()
     {
         SYLAR_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
-                       "Fiber::awake() must be called in main fiber.");
+                      "Fiber::awake() must be called in main fiber.");
         SYLAR_ASSERT2(m_state == SLEEP,
-                       "The Fiber that is not sleeping cannot be awoken");
+                      "The Fiber that is not sleeping cannot be awoken");
         m_state = READY;
     }
 
     void Fiber::destroy()
     {
         SYLAR_ASSERT2(GetThis()->m_id == GetMainFiber()->m_id,
-                       "Fiber::destroy() must be called in main fiber.");
+                      "Fiber::destroy() must be called in main fiber.");
         m_state = DESTROY;
+    }
+
+    void Fiber::reset(std::function<void()> cb)
+    {
+        SYLAR_ASSERT(m_stack);
+        SYLAR_ASSERT(m_state != DESTROY && m_state != EXCEPT);
+        m_cb = cb;
+        if (getcontext(&m_ctx))
+        {
+            SYLAR_ASSERT2(false, "getcontext");
+        }
+
+        m_ctx.uc_link = nullptr;
+        m_ctx.uc_stack.ss_sp = m_stack;
+        m_ctx.uc_stack.ss_size = m_stacksize;
+
+        makecontext(&m_ctx, &Fiber::MainFunc, 0);
+        m_state = INIT;
     }
 }
