@@ -91,7 +91,10 @@ namespace sylar
              * @param name 线程名称
              * @param stop 线程开关
              */
-            WokerThread(const std::string &name, std::atomic_bool &stop, std::function<void()> idle);
+            WokerThread(Scheduler *scheduler, const std::string &name, std::atomic_bool &stop, std::function<void()> idle);
+
+            bool isIdle();
+            bool isStop();
 
         private:
             /**
@@ -100,7 +103,8 @@ namespace sylar
              */
             static void *run(void *arg);
 
-        private:
+        protected:
+            Scheduler *m_scheduler;
             std::atomic<int> m_count{0};  //当前线程任务总量
             std::string m_name;           //线程名称
             std::queue<Task::ptr> t_init; // INIT状态任务
@@ -170,10 +174,6 @@ namespace sylar
          *
          */
         void start();
-        /**
-         * @brief 停止协程调度器
-         */
-        void stop();
 
         /**
          * @brief 提交任务
@@ -187,7 +187,14 @@ namespace sylar
          */
         void submit(Fiber::ptr fb, int thr = -1, uint16_t pri = 5);
 
-        static Scheduler* GetThis();
+        /**
+         * @brief 停止协程调度器
+         */
+        virtual void stop();
+
+        static Scheduler *GetThis();
+
+        static void SetThis(Scheduler *scheduler);
 
     protected:
         virtual void idle();

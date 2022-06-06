@@ -4,6 +4,7 @@
 #include <memory>
 #include <semaphore.h>
 #include <atomic>
+#include <iostream>
 namespace sylar
 {
     class Semaphore : Noncopyable

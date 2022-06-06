@@ -3,12 +3,13 @@
 namespace sylar
 {
     static Logger::ptr sys_logger = SYLAR_LOG_NAME("system");
-    static thread_local Scheduler* t_scheduler = nullptr;
+    static thread_local Scheduler *t_scheduler = nullptr;
 
     void *Scheduler::WokerThread::run(void *arg)
     {
         WokerThread *thr = (WokerThread *)arg;
-        SetThis((Thread *)thr);
+        Thread::SetThis(thr);
+        Scheduler::SetThis(thr->m_scheduler);
         SetName(thr->m_name);
         thr->m_id = sylar::GetThreadId();
         pthread_setname_np(pthread_self(), thr->m_name.substr(0, 15).c_str());
@@ -147,8 +148,8 @@ namespace sylar
         return 0;
     }
 
-    Scheduler::WokerThread::WokerThread(const std::string &name, std::atomic_bool &stop, std::function<void()> idle)
-        : m_name(name), m_stop(stop), m_idle(idle)
+    Scheduler::WokerThread::WokerThread(Scheduler *scheduler, const std::string &name, std::atomic_bool &stop, std::function<void()> idle)
+        : m_scheduler(scheduler), m_name(name), m_stop(stop), m_idle(idle)
     {
         if (name.empty())
         {
@@ -166,6 +167,23 @@ namespace sylar
         }
 
         m_semaphore.wait();
+    }
+
+    bool Scheduler::WokerThread::isIdle()
+    {
+        if (m_count == 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool Scheduler::WokerThread::isStop()
+    {
+        return m_stop;
     }
 
     Scheduler::AllocThread::AllocThread(Mutex &mutex,
@@ -216,7 +234,7 @@ namespace sylar
             m_stop = false;
             for (int i = 0; i < m_thread_count; i++)
             {
-                WokerThread::ptr thr(new WokerThread(m_name + "_woker" + std::to_string(i), m_stop, std::bind(&Scheduler::idle, this)));
+                WokerThread::ptr thr(new WokerThread(this, m_name + "_woker" + std::to_string(i), m_stop, std::bind(&Scheduler::idle, this)));
                 m_workers.push_back(thr);
             }
             m_tasks = std::queue<Scheduler::Task::ptr>();
@@ -263,9 +281,15 @@ namespace sylar
         SYLAR_LOG_INFO(sys_logger) << "pid: " << sylar::GetThreadId() << " This thread idle";
     }
 
-    Scheduler* Scheduler::GetThis()
+    Scheduler *Scheduler::GetThis()
     {
+        SYLAR_ASSERT(t_scheduler)
         return t_scheduler;
+    }
+
+    void Scheduler::SetThis(Scheduler *scheduler)
+    {
+        t_scheduler = scheduler;
     }
 
 }

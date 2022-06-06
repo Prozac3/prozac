@@ -65,10 +65,38 @@ namespace sylar
 
         rt = epoll_ctl(m_epfd, EPOLL_CTL_ADD, m_tickleFds[0], &event);
         SYLAR_ASSERT(!rt);
-
         contextResize(32);
-
         start();
+    }
+
+    IOManager::~IOManager()
+    {
+        stop();
+        close(m_epfd);
+        close(m_tickleFds[0]);
+        close(m_tickleFds[1]);
+
+        for (size_t i = 0; i < m_fdContexts.size(); ++i)
+        {
+            if (m_fdContexts[i])
+            {
+                delete m_fdContexts[i];
+            }
+        }
+    }
+
+    void IOManager::contextResize(size_t size)
+    {
+        m_fdContexts.resize(size);
+
+        for (size_t i = 0; i < m_fdContexts.size(); ++i)
+        {
+            if (!m_fdContexts[i])
+            {
+                m_fdContexts[i] = new FdContext;
+                m_fdContexts[i]->fd = i;
+            }
+        }
     }
 
     int IOManager::addEvent(int fd, Event event, std::function<void()> cb)
@@ -119,8 +147,8 @@ namespace sylar
 
         event_ctx.scheduler = Scheduler::GetThis();
 
-        event_ctx.fiber = Fiber::GetThis();
-        SYLAR_ASSERT2(event_ctx.fiber->getState() == Fiber::EXEC, "state=" << event_ctx.fiber->getState());
+        event_ctx.fiber = Fiber::CreatFiber(cb);
+        SYLAR_ASSERT2(event_ctx.fiber->getState() == Fiber::INIT, "state=" << event_ctx.fiber->getState());
         return 0;
     }
 
@@ -248,4 +276,80 @@ namespace sylar
         return dynamic_cast<IOManager *>(Scheduler::GetThis());
     }
 
+    void IOManager::idle()
+    {
+        SYLAR_LOG_DEBUG(g_logger) << "idle";
+        const uint64_t MAX_EVNETS = 256;
+        epoll_event *events = new epoll_event[MAX_EVNETS]();
+        std::shared_ptr<epoll_event> shared_events(events, [](epoll_event *ptr)
+                                                   { delete[] ptr; });
+        WokerThread *woker = (WokerThread *)Thread::GetThis();
+        SYLAR_ASSERT(woker)
+        while (woker->isIdle() && (!woker->isStop()))
+        {
+            int ret = 0;
+            while (true)
+            {
+                static const int MAX_TIMEOUT = 3000;
+                ret = epoll_wait(m_epfd, events, MAX_EVNETS, MAX_TIMEOUT);
+                if (ret < 0 && errno == EINTR)
+                {
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            for (int i = 0; i < ret; ++i)
+            {
+                epoll_event &event = events[i];
+                FdContext *fd_ctx = (FdContext *)event.data.ptr;
+                FdContext::MutexType::Lock lock(fd_ctx->mutex);
+
+                if (event.events & (EPOLLERR | EPOLLHUP))
+                {
+                    event.events |= (EPOLLIN | EPOLLOUT) & fd_ctx->events;
+                }
+                int real_events = NONE;
+                if (event.events & EPOLLIN)
+                {
+                    real_events |= READ;
+                }
+                if (event.events & EPOLLOUT)
+                {
+                    real_events |= WRITE;
+                }
+
+                if ((fd_ctx->events & real_events) == NONE)
+                {
+                    continue;
+                }
+
+                int left_events = (fd_ctx->events & ~real_events);
+                int op = left_events ? EPOLL_CTL_MOD : EPOLL_CTL_DEL;
+                event.events = EPOLLET | left_events;
+
+                int rt2 = epoll_ctl(m_epfd, op, fd_ctx->fd, &event);
+                if (rt2)
+                {
+                    SYLAR_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
+                                              << (EpollCtlOp)op << ", " << fd_ctx->fd << ", " << (EPOLL_EVENTS)event.events << "):"
+                                              << rt2 << " (" << errno << ") (" << strerror(errno) << ")";
+                    continue;
+                }
+
+                if (real_events & READ)
+                {
+                    fd_ctx->triggerEvent(READ);
+                    --m_pendingEventCount;
+                }
+                if (real_events & WRITE)
+                {
+                    fd_ctx->triggerEvent(WRITE);
+                    --m_pendingEventCount;
+                }
+            }
+        }
+    }
 }

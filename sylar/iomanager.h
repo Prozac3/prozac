@@ -87,6 +87,8 @@ namespace sylar
          */
         bool cancelAll(int fd);
 
+        //void stop() override;
+
         /**
          * @brief 返回当前的IOManager
          */

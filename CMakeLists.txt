@@ -44,5 +44,9 @@ add_executable(test_config tests/test_config.cpp)
 add_dependencies(test_config sylar)
 target_link_libraries(test_config ${LIBS})
 
+add_executable(test_iomanager tests/test_iomanager.cpp)
+add_dependencies(test_iomanager sylar)
+target_link_libraries(test_iomanager ${LIBS})
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
