@@ -24,7 +24,7 @@ void test_fiber()
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(6000);
-    inet_pton(AF_INET, "192.168.1.105", &addr.sin_addr.s_addr);
+    inet_pton(AF_INET, "172.30.208.1", &addr.sin_addr.s_addr);
 
     if (!connect(sock, (const sockaddr *)&addr, sizeof(addr)))
     {
@@ -37,9 +37,7 @@ void test_fiber()
         sylar::IOManager::GetThis()->addEvent(sock, sylar::IOManager::WRITE, []()
                                               {
             SYLAR_LOG_INFO(g_logger) << "write callback";
-            //close(sock);
-            sylar::IOManager::GetThis()->cancelEvent(sock, sylar::IOManager::READ);
-            close(sock); });
+         });
     }
     else
     {
