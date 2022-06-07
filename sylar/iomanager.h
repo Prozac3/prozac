@@ -2,6 +2,7 @@
 #define __IOMANAGER_H__
 
 #include <sylar/scheduler.h>
+
 namespace sylar
 {
     class IOManager : public Scheduler
@@ -87,7 +88,7 @@ namespace sylar
          */
         bool cancelAll(int fd);
 
-        //void stop() override;
+        void stop() override;
 
         /**
          * @brief 返回当前的IOManager
@@ -108,9 +109,10 @@ namespace sylar
         /// 当前等待执行的事件数量
         std::atomic<size_t> m_pendingEventCount = {0};
         /// IOManager的Mutex
-        RWMutexType m_mutex;
+        RWMutexType m_rwmutex;
         /// socket事件上下文的容器
         std::vector<FdContext *> m_fdContexts;
+        std::atomic<bool> m_stopping{false};
     };
 }
 

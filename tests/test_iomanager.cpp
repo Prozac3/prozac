@@ -24,7 +24,7 @@ void test_fiber()
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(6000);
-    inet_pton(AF_INET, "172.30.208.1", &addr.sin_addr.s_addr);
+    inet_pton(AF_INET, "192.168.1.105", &addr.sin_addr.s_addr);
 
     if (!connect(sock, (const sockaddr *)&addr, sizeof(addr)))
     {
@@ -51,7 +51,7 @@ void test1()
               << " EPOLLOUT=" << EPOLLOUT << std::endl;
     sylar::IOManager iom(8, "iom_test");
     iom.submit(sylar::Fiber::ptr(sylar::Fiber::CreatFiber(test_fiber)));
-    while(true){}
+    sleep(4);
 }
 
 int main(int argc, char **argv)

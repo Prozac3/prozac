@@ -199,7 +199,7 @@ namespace sylar
     protected:
         virtual void idle();
 
-    private:
+    protected:
         Mutex m_mutex;                           //任务队列锁
         std::queue<Task::ptr> m_tasks;           //任务队列
         std::vector<WokerThread::ptr> m_workers; //工作线程

@@ -15,6 +15,7 @@ set(LIB_SRC
     ./sylar/config.cpp
     ./sylar/env.cpp
     ./sylar/iomanager.cpp
+    ./sylar/timer.cpp
     )
 
 set(LIBS

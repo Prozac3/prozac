@@ -101,8 +101,15 @@ namespace sylar
 
     int IOManager::addEvent(int fd, Event event, std::function<void()> cb)
     {
+        if (SYLAR_UNLIKELY(m_stopping))
+        {
+            SYLAR_LOG_INFO(g_logger) << "IOManager is stopping! The operator addEvent is failed."
+                                     << " event=" << (EPOLL_EVENTS)event
+                                     << " fd=" << fd;
+            return -1;
+        }
         FdContext *fd_ctx = nullptr;
-        RWMutexType::ReadLock lock(m_mutex);
+        RWMutexType::ReadLock lock(m_rwmutex);
         if ((int)m_fdContexts.size() > fd)
         {
             fd_ctx = m_fdContexts[fd];
@@ -111,7 +118,7 @@ namespace sylar
         else
         {
             lock.unlock();
-            RWMutexType::WriteLock lock2(m_mutex);
+            RWMutexType::WriteLock lock2(m_rwmutex);
             contextResize(fd * 1.5);
             fd_ctx = m_fdContexts[fd];
         }
@@ -154,7 +161,7 @@ namespace sylar
 
     bool IOManager::delEvent(int fd, Event event)
     {
-        RWMutexType::ReadLock lock(m_mutex);
+        RWMutexType::ReadLock lock(m_rwmutex);
         if ((int)m_fdContexts.size() <= fd)
         {
             return false;
@@ -192,7 +199,7 @@ namespace sylar
 
     bool IOManager::cancelEvent(int fd, Event event)
     {
-        RWMutexType::ReadLock lock(m_mutex);
+        RWMutexType::ReadLock lock(m_rwmutex);
         if ((int)m_fdContexts.size() <= fd)
         {
             return false;
@@ -228,7 +235,7 @@ namespace sylar
 
     bool IOManager::cancelAll(int fd)
     {
-        RWMutexType::ReadLock lock(m_mutex);
+        RWMutexType::ReadLock lock(m_rwmutex);
         if ((int)m_fdContexts.size() <= fd)
         {
             return false;
@@ -274,6 +281,20 @@ namespace sylar
     IOManager *IOManager::GetThis()
     {
         return dynamic_cast<IOManager *>(Scheduler::GetThis());
+    }
+
+    void IOManager::stop()
+    {
+        m_stopping = true;
+        while(m_pendingEventCount){
+
+        }
+        m_stop = true;
+        for (auto woker : m_workers)
+        {
+            woker->join();
+        }
+        m_alloc->join();
     }
 
     void IOManager::idle()
